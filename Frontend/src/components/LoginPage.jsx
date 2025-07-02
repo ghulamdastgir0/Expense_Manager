@@ -1,7 +1,9 @@
 import { useState } from "react";
 
 function Loginpage() {
-  const [count, setCount] = useState(0);
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
 
   return (
     <section className="bg-[#2D5A4A] min-h-screen h-screen w-full flex items-center justify-center p-4 fixed inset-0">
@@ -13,28 +15,36 @@ function Loginpage() {
 
           <div className="flex flex-col gap-4 text-white">
             <input
-              className="p-2 mt-8 rounded-xl border"
+              className="p-2 mt-8 rounded-xl border bg-transparent"
               type="email"
               name="email"
               placeholder="Email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
             />
             <div className="relative">
               <input
-                className="p-2 rounded-xl border w-full"
-                type="password"
+                className="p-2 rounded-xl border w-full bg-transparent pr-10"
+                type={showPassword ? "text" : "password"}
                 name="password"
                 placeholder="Password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
               />
               <svg
                 xmlns="http://www.w3.org/2000/svg"
-                width="16"
-                height="16"
+                width="20"
+                height="20"
                 fill="gray"
-                className="bi bi-eye absolute top-1/2 right-3 -translate-y-1/2"
+                className="absolute top-1/2 right-3 -translate-y-1/2 cursor-pointer"
                 viewBox="0 0 16 16"
+                onClick={() => setShowPassword(!showPassword)}
               >
-                <path d="M16 8s-3-5.5-8-5.5S0 8 0 8s3 5.5 8 5.5S16 8 16 8zM1.173 8a13.133 13.133 0 0 1 1.66-2.043C4.12 4.668 5.88 3.5 8 3.5c2.12 0 3.879 1.168 5.168 2.457A13.133 13.133 0 0 1 14.828 8c-.058.087-.122.183-.195.288-.335.48-.83 1.12-1.465 1.755C11.879 11.332 10.119 12.5 8 12.5c-2.12 0-3.879-1.168-5.168-2.457A13.134 13.134 0 0 1 1.172 8z" />
-                <path d="M8 5.5a2.5 2.5 0 1 0 0 5 2.5 2.5 0 0 0 0-5zM4.5 8a3.5 3.5 0 1 1 7 0 3.5 3.5 0 0 1-7 0z" />
+                {showPassword ? (
+                  <path d="M13.359 11.238A8.704 8.704 0 0 1 8 13.5c-3.42 0-6.438-2.104-8-5.5a9.405 9.405 0 0 1 2.07-2.99l-1.35-1.35.708-.707 12 12-.708.707-1.361-1.361zM8 12.5c1.28 0 2.497-.353 3.55-.964L4.464 4.45A7.441 7.441 0 0 0 1.52 8c1.323 2.552 4.028 4.5 6.48 4.5zm2.876-4.026L9.632 7.23a2 2 0 0 1-2.4-2.4L5.526 3.87A3.99 3.99 0 0 0 4 8c0 1.657 1.006 3.093 2.445 3.744a3.988 3.988 0 0 0 4.43-3.27zm1.51-3.465c.55.488 1.05 1.048 1.484 1.691A9.408 9.408 0 0 1 14.48 8c-.427.823-1.011 1.58-1.73 2.234l-.707-.707a7.404 7.404 0 0 0 1.423-1.527A7.422 7.422 0 0 0 13.484 8c-.27-.492-.605-.95-.984-1.351l-.114-.14z" />
+                ) : (
+                  <path d="M8 2C3.58 2 0 6 0 8s3.58 6 8 6 8-4 8-6-3.58-6-8-6zM8 12c-2.21 0-4-2.015-4-4s1.79-4 4-4 4 2.015 4 4-1.79 4-4 4zm0-6a2 2 0 1 0 0 4 2 2 0 0 0 0-4z" />
+                )}
               </svg>
             </div>
             <button className="bg-[#002D74] rounded-xl text-white py-2 hover:scale-105 duration-300">
@@ -83,6 +93,7 @@ function Loginpage() {
             <h2 className="text-3xl font-bold mb-8">Take Control of<br />Your Finances</h2>
 
             <div className="space-y-6 mb-8">
+              {/* Feature 1 */}
               <div className="flex items-center space-x-4">
                 <div className="bg-[#4ADE80] bg-opacity-20 rounded-full p-3">
                   <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 24 24">
@@ -95,6 +106,7 @@ function Loginpage() {
                 </div>
               </div>
 
+              {/* Feature 2 */}
               <div className="flex items-center space-x-4">
                 <div className="bg-[#4ADE80] bg-opacity-20 rounded-full p-3">
                   <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 24 24">
@@ -107,6 +119,7 @@ function Loginpage() {
                 </div>
               </div>
 
+              {/* Feature 3 */}
               <div className="flex items-center space-x-4">
                 <div className="bg-[#4ADE80] bg-opacity-20 rounded-full p-3">
                   <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 24 24">
@@ -120,6 +133,7 @@ function Loginpage() {
               </div>
             </div>
 
+            {/* Stats Section */}
             <div className="bg-white rounded-xl p-6 text-gray-800">
               <h4 className="font-semibold text-lg mb-2">Track & Improve<br />Your Spending Habits</h4>
               <p className="text-sm text-gray-600 mb-6">Get clear insights into your spending.<br />Make informed decisions and<br />reach your financial goals.</p>
