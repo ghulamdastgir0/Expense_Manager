@@ -1,12 +1,15 @@
 import React from "react";
-import heroImg from "../assets/investment.png";
-import aboutImg from "../assets/money.svg";
-import contactImg from "../assets/contact.svg";
-import img1 from "../assets/pic1.png";
-import img2 from "../assets/pic2.png";
-import img3 from "../assets/pic3.png";
+import heroImg from "../../assets/investment.png";
+import aboutImg from "../../assets/money.svg";
+import contactImg from "../../assets/contact.svg";
+import img1 from "../../assets/pic1.png";
+import img2 from "../../assets/pic2.png";
+import img3 from "../../assets/pic3.png";
+import {useNavigate} from "react-router-dom";
 
 const LandingPage = () => {
+  const navigate= useNavigate();
+
   return (
     <div className="scroll-smooth font-sans overflow-x-hidden bg-[#2D5A4A] text-white">
       {/* Mobile Top Logo */}
@@ -23,10 +26,10 @@ const LandingPage = () => {
             ExpenseTracker<span className="text-[10px] align-super">™</span>
           </h1>
           <div className="flex gap-4">
-            <button className="text-white bg-[#539165] px-4 py-2 rounded-md hover:bg-[#407c4e] hover:scale-110 transition text-sm">
-              Login
+            <button onClick={() => navigate('/signin')} className="text-white bg-[#539165] px-4 py-2 rounded-md hover:bg-[#407c4e] hover:scale-110 transition text-sm">
+              Sign In
             </button>
-            <button className="text-[#539165] border border-[#539165] bg-black px-4 py-2 rounded-md hover:bg-[#1a1a1a] transition text-sm">
+            <button onClick={() => navigate('/signup')} className="text-[#539165] border border-[#539165] bg-black px-4 py-2 rounded-md hover:bg-[#1a1a1a] transition text-sm">
              Sign Up
             </button>
 

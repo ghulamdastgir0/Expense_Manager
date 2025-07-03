@@ -1,115 +1,6 @@
-import google from "../assets/google.svg"
-import faceebook from "../assets/facebook.svg"
-import eye from "../assets/eye.svg"
-import { useState } from "react"
-
-function SignUp() {
-  const [isPasswordVisible, setIsPasswordVisible] = useState(false)
-  const togglePasswordVisibility = () => {
-    setIsPasswordVisible(!isPasswordVisible)
-  }
-  return (
-    <div className="flex items-center justify-center min-h-screen bg-[#2D5A4A] p-4">
-      <div className="flex w-full max-w-6xl h-[87vh] bg-black rounded-3xl shadow-2xl overflow-hidden">
-        {/* Left Panel - Sign Up Form */}
-        <div className="flex flex-col justify-center w-full lg:w-1/2 p-12 bg-black text-white">
-          <div className="mb-8">
-            <h2 className="text-sm font-medium text-gray-400 mb-2">Expense Manager</h2>
-            <h1 className="text-3xl font-bold mb-2">Create Your Account</h1>
-            <p className="text-gray-400 text-sm">Start managing your expenses smarter with your new account.</p>
-          </div>
-
-          <form className="space-y-6">
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label htmlFor="fname" className="block text-sm font-medium text-gray-300 mb-2">
-                  First Name
-                </label>
-                <input
-                  type="text"
-                  id="fname"
-                  placeholder="John"
-                  className="w-full px-4 py-3 bg-white text-black rounded-lg border-0 focus:ring-2 focus:ring-green-500 focus:outline-none"
-                  required
-                />
-              </div>
-              <div>
-                <label htmlFor="lname" className="block text-sm font-medium text-gray-300 mb-2">
-                  Last Name
-                </label>
-                <input
-                  type="text"
-                  id="lname"
-                  placeholder="Doe"
-                  className="w-full px-4 py-3 bg-white text-black rounded-lg border-0 focus:ring-2 focus:ring-green-500 focus:outline-none"
-                  required
-                />
-              </div>
-            </div>
-            <div>
-              <label htmlFor="email" className="block text-sm font-medium text-gray-300 mb-2">
-                Email
-              </label>
-              <input
-                type="email"
-                id="email"
-                placeholder="Johndoe@gmail.com"
-                className="w-full px-4 py-3 bg-white text-black rounded-lg border-0 focus:ring-2 focus:ring-green-500 focus:outline-none"
-                required
-              />
-            </div>
-
-            <div>
-              <label htmlFor="password" className="block text-sm font-medium text-gray-300 mb-2">
-                Password
-              </label>
-
-              {/* Wrapper for input + icon */}
-              <div className="relative">
-                <input
-                  type={isPasswordVisible ? "text" : "password"}
-                  id="password"
-                  placeholder="••••••••"
-                  className="w-full px-4 py-3 pr-12 bg-white text-black rounded-lg border-0 focus:ring-2 focus:ring-green-500 focus:outline-none"
-                  required
-                />
-                {/* Eye icon inside input */}
-                <div className="absolute right-4 top-1/2 transform -translate-y-1/2">
-                  <button onClick={togglePasswordVisibility} type="button" className="focus:outline-none">
-                    <img src={eye || "/placeholder.svg"} alt="Eye Icon" className="w-6 h-6 cursor-pointer" />
-                  </button>
-                </div>
-              </div>
-            </div>
-
-            <button
-              type="submit"
-              className="w-full bg-[#4ADE80] text-black font-semibold py-3 rounded-lg hover:bg-[#3BC470] transition-colors duration-200"
-            >
-              Sign Up
-            </button>
-          </form>
-
-          {/* Social Login */}
-          <div className="flex justify-center space-x-4 mt-8">
-            <button className="w-12 h-12 bg-white rounded-full flex items-center justify-center hover:bg-gray-100 transition-colors">
-              <img src={google || "/placeholder.svg"} alt="Google" className="w-6 h-6" />
-            </button>
-            <button className="w-12 h-12 bg-white rounded-full flex items-center justify-center hover:bg-gray-100 transition-colors">
-              <img src={faceebook || "/placeholder.svg"} alt="Facebook" className="w-8 h-8" />
-            </button>
-          </div>
-
-          <p className="text-center text-gray-400 text-sm mt-8">
-            Already have an account?{" "}
-            <a href="/login" className="text-[#4ADE80] hover:underline">
-              Sign In
-            </a>
-          </p>
-        </div>
-
-        {/* Right Panel - Expense Management Features */}
-        <div className="hidden lg:flex lg:w-1/2 bg-gradient-to-br from-[#4ADE80] to-[#22C55E] p-12 flex-col justify-center relative overflow-hidden">
+function RightScreen(){
+    return(
+                <div className="hidden lg:flex lg:w-1/2 bg-gradient-to-br from-[#4ADE80] to-[#22C55E] p-12 flex-col justify-center relative overflow-hidden">
           {/* Background Pattern */}
           <div className="absolute inset-0 opacity-10">
             <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2">
@@ -220,9 +111,6 @@ function SignUp() {
             </div>
           </div>
         </div>
-      </div>
-    </div>
-  )
+    );
 }
-
-export default SignUp
+export default RightScreen
