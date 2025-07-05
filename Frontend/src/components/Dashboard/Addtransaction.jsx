@@ -176,7 +176,7 @@ function AddTransaction() {
                         : "border-gray-600 hover:border-gray-500"
                     }`}
                   >
-                    <type.icon className={`w-5 h-5 ${formData.type === type.value ? "text-[#4ADE80]" : type.color}`} />
+                    <type.icon className={`w-5 h-5 ${type.color}`} />
                     <span className={`font-medium ${formData.type === type.value ? "text-[#4ADE80]" : "text-white"}`}>
                       {type.label}
                     </span>

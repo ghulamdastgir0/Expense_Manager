@@ -1,18 +1,25 @@
-"use client"
-import { useState } from "react"
-import NavBar from "./navbar"
-import Top5Expenses from "./BarChart"
-import StatBox from "./StatBox"
-import ChartBox from "./ChartBox"
-import Box from "./Box"
-import AddTransaction from "./Addtransaction"
-import { DollarSign, TrendingUp, TrendingDown, CreditCard, Calendar } from "lucide-react"
-import TransactionsPage from "./TransactionsPage"
-import History from "./History"
+"use client";
+import { useState } from "react";
+import NavBar from "./navbar";
+import Top5Expenses from "./BarChart";
+import StatBox from "./StatBox";
+import ChartBox from "./ChartBox";
+import Box from "./Box";
+import AddTransaction from "./Addtransaction";
+import {
+  DollarSign,
+  TrendingUp,
+  TrendingDown,
+  CreditCard,
+  Calendar
+} from "lucide-react";
+import TransactionsPage from "./TransactionsPage";
+import History from "./History";
+import SummaryRow from "./Summary_Row";
 
 function Dashboard() {
   // ===== NAVIGATION STATE =====
-  const [currentPage, setCurrentPage] = useState("Dashboard")
+  const [currentPage, setCurrentPage] = useState("Dashboard");
 
   // ===== DATA SECTION =====
 
@@ -27,7 +34,7 @@ function Dashboard() {
       iconColor: "text-green-400",
       trend: "up",
       trendValue: "+12.5%",
-      trendLabel: "vs last month",
+      trendLabel: "vs last month"
     },
     {
       id: 2,
@@ -38,7 +45,7 @@ function Dashboard() {
       iconColor: "text-blue-400",
       trend: "up",
       trendValue: "+8.2%",
-      trendLabel: "vs last month",
+      trendLabel: "vs last month"
     },
     {
       id: 3,
@@ -49,7 +56,7 @@ function Dashboard() {
       iconColor: "text-red-400",
       trend: "down",
       trendValue: "-3.1%",
-      trendLabel: "vs last month",
+      trendLabel: "vs last month"
     },
     {
       id: 4,
@@ -60,9 +67,9 @@ function Dashboard() {
       iconColor: "text-purple-400",
       trend: "up",
       trendValue: "+15.3%",
-      trendLabel: "vs last month",
-    },
-  ]
+      trendLabel: "vs last month"
+    }
+  ];
 
   // Chart data
   const listOfData = [
@@ -70,28 +77,50 @@ function Dashboard() {
     { category: "Transport", expense: 300 },
     { category: "Entertainment", expense: 200 },
     { category: "Utilities", expense: 150 },
-    { category: "Others", expense: 100 },
-  ]
+    { category: "Others", expense: 100 }
+  ];
 
   // Budget data for additional insights
   const budgetData = [
     { category: "Food", spent: 400, budget: 500, color: "bg-green-500" },
     { category: "Transport", spent: 300, budget: 350, color: "bg-yellow-500" },
-    { category: "Entertainment", spent: 200, budget: 250, color: "bg-blue-500" },
-  ]
+    { category: "Entertainment", spent: 200, budget: 250, color: "bg-blue-500" }
+  ];
+
+  // Financial summary data for additional insights
+  const summaryData = [
+    {
+      label: "Total Income",
+      value: "$5,200",
+      bg: "bg-green-900/20",
+      textColor: "text-green-400"
+    },
+    {
+      label: "Total Expenses",
+      value: "$3,150",
+      bg: "bg-red-900/20",
+      textColor: "text-red-400"
+    },
+    {
+      label: "Net Savings",
+      value: "$2,050",
+      bg: "bg-blue-900/20",
+      textColor: "text-blue-400"
+    }
+  ];
 
   // ===== EVENT HANDLERS =====
 
   // Handle navigation
   const handleNavigation = (page) => {
-    setCurrentPage(page)
-  }
+    setCurrentPage(page);
+  };
 
   // Handle stat box clicks
   const handleStatClick = (stat) => {
-    console.log(`Clicked on ${stat.title}:`, stat)
+    console.log(`Clicked on ${stat.title}:`, stat);
     // Add your navigation or modal logic here
-  }
+  };
 
   // ===== RENDER FUNCTIONS =====
 
@@ -100,8 +129,12 @@ function Dashboard() {
     <div className="p-3 sm:p-4 md:p-6 lg:p-8 bg-black text-white space-y-8">
       {/* ===== HEADER SECTION ===== */}
       <div className="space-y-1">
-        <h1 className="text-3xl font-bold text-white hidden lg:block">Dashboard</h1>
-        <p className="text-gray-300 text-sm lg:text-base">Welcome back! Here's your financial overview.</p>
+        <h1 className="text-3xl font-bold text-white hidden lg:block">
+          Dashboard
+        </h1>
+        <p className="text-gray-300 text-sm lg:text-base">
+          Welcome back! Here's your financial overview.
+        </p>
       </div>
 
       {/* ===== STATS CARDS SECTION ===== */}
@@ -143,7 +176,11 @@ function Dashboard() {
       {/* ===== ADDITIONAL INSIGHTS SECTION ===== */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {/* Budget Progress */}
-        <Box title="Budget Progress" subtitle="Monthly budget tracking" className="shadow-lg">
+        <Box
+          title="Budget Progress"
+          subtitle="Monthly budget tracking"
+          className="shadow-lg"
+        >
           <div className="space-y-4">
             {budgetData.map((item, index) => (
               <div key={index} className="space-y-2">
@@ -159,27 +196,25 @@ function Dashboard() {
                     style={{ width: `${(item.spent / item.budget) * 100}%` }}
                   ></div>
                 </div>
-                <p className="text-xs text-gray-400">{Math.round((item.spent / item.budget) * 100)}% of budget used</p>
+                <p className="text-xs text-gray-400">
+                  {Math.round((item.spent / item.budget) * 100)}% of budget used
+                </p>
               </div>
             ))}
           </div>
         </Box>
 
         {/* Financial Summary */}
-        <Box title="Financial Summary" subtitle="This month overview" className="shadow-lg">
+        <Box
+          title="Financial Summary"
+          subtitle="This month overview"
+          className="shadow-lg"
+        >
           <div className="space-y-4">
-            <div className="flex justify-between items-center p-3 bg-green-900/20 rounded-lg">
-              <span className="text-white text-sm">Total Income</span>
-              <span className="text-green-400 font-bold">$5,200</span>
-            </div>
-            <div className="flex justify-between items-center p-3 bg-red-900/20 rounded-lg">
-              <span className="text-white text-sm">Total Expenses</span>
-              <span className="text-red-400 font-bold">$3,150</span>
-            </div>
-            <div className="flex justify-between items-center p-3 bg-blue-900/20 rounded-lg">
-              <span className="text-white text-sm">Net Savings</span>
-              <span className="text-blue-400 font-bold">$2,050</span>
-            </div>
+            {summaryData.map((item, index) => (
+              <SummaryRow key={index} {...item} />
+            ))}
+
             <div className="pt-2 border-t border-gray-700">
               <div className="flex justify-between items-center">
                 <span className="text-gray-300 text-sm">Savings Rate</span>
@@ -189,9 +224,8 @@ function Dashboard() {
           </div>
         </Box>
       </div>
-
     </div>
-  )
+  );
 
   // ===== MAIN RENDER =====
   return (
@@ -210,8 +244,8 @@ function Dashboard() {
               {currentPage === "AddTransaction"
                 ? "Add Transaction"
                 : currentPage === "History"
-                  ? "Transaction History"
-                  : currentPage}
+                ? "Transaction History"
+                : currentPage}
             </h1>
           </div>
         </div>
@@ -227,7 +261,9 @@ function Dashboard() {
             />
           )}
           {currentPage === "AddTransaction" && <AddTransaction />}
-          {currentPage === "History" && <History onNavigate={handleNavigation} />}
+          {currentPage === "History" && (
+            <History onNavigate={handleNavigation} />
+          )}
           {currentPage === "Reports" && (
             <div className="p-8 text-white">
               <h1 className="text-3xl font-bold mb-4">Reports</h1>
@@ -249,7 +285,7 @@ function Dashboard() {
         </div>
       </main>
     </div>
-  )
+  );
 }
 
-export default Dashboard
+export default Dashboard;
