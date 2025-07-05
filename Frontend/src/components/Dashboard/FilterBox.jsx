@@ -1,4 +1,4 @@
-function ChartBox({ title, subtitle, children, headerAction, className = "", ...props }) {
+function FilterBox({ title, subtitle, children, headerAction, className = "", ...props }) {
   return (
     <div className={`bg-[#1C2C26] rounded-xl shadow-lg border border-gray-700 p-4 ${className}`} {...props}>
       {/* Custom Header with Action */}
@@ -12,10 +12,10 @@ function ChartBox({ title, subtitle, children, headerAction, className = "", ...
         </div>
       )}
 
-      {/* Chart Content with increased height */}
-      <div className="h-80 w-full">{children}</div>
+      {/* Filter Content - No fixed height */}
+      <div className="w-full">{children}</div>
     </div>
   )
 }
 
-export default ChartBox
+export default FilterBox

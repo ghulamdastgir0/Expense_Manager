@@ -1,11 +1,12 @@
 "use client";
 import { useState } from "react";
 import NavBar from "./navbar";
-import Top5Expenses from "./BarChart";
+import BarChat from "./BarChart";
 import StatBox from "./StatBox";
 import ChartBox from "./ChartBox";
 import Box from "./Box";
 import AddTransaction from "./Addtransaction";
+import Reports from "./Reports";
 import {
   DollarSign,
   TrendingUp,
@@ -169,7 +170,7 @@ function Dashboard() {
           }
           className="shadow-lg"
         >
-          <Top5Expenses data={listOfData} />
+          <BarChat data={listOfData} dataKey="expense" />
         </ChartBox>
       </div>
 
@@ -265,10 +266,7 @@ function Dashboard() {
             <History onNavigate={handleNavigation} />
           )}
           {currentPage === "Reports" && (
-            <div className="p-8 text-white">
-              <h1 className="text-3xl font-bold mb-4">Reports</h1>
-              <p className="text-gray-300">Reports page coming soon...</p>
-            </div>
+            <Reports onNavigate={handleNavigation} />
           )}
           {currentPage === "Profile" && (
             <div className="p-8 text-white">
