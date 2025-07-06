@@ -1,5 +1,3 @@
-"use client"
-
 import BarChat from "./BarChart"
 import DonutChart from "./DonutChart"
 import ChartBox from "./ChartBox"

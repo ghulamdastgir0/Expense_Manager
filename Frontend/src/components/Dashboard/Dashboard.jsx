@@ -1,6 +1,6 @@
 "use client";
 import { useState } from "react";
-import NavBar from "./navbar";
+import NavBar from "./NavBar";
 import BarChat from "./BarChart";
 import StatBox from "./StatBox";
 import ChartBox from "./ChartBox";
