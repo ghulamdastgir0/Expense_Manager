@@ -1,21 +1,20 @@
-import {
-  LayoutGrid,
-  Banknote,
-  Users,
-  BarChart3,
-  Settings,
-  LogOutIcon,
-  HistoryIcon,
-  MenuIcon,
-  XIcon,
-} from "lucide-react"
+"use client"
+import { LayoutGrid, Banknote, Users, BarChart3, Settings, HistoryIcon, MenuIcon, XIcon } from "lucide-react"
 import { useState, useEffect } from "react"
+import profileimage from "../../assets/pic1.png" // Importing the user profile image
 
 function NavBar({ currentPage, onNavigate }) {
   const [activeItem, setActiveItem] = useState(currentPage || "Dashboard")
   const [isOpen, setIsOpen] = useState(false)
 
-  // Update active item when currentPage prop changes
+  // User profile data 
+  const userProfile = {
+    name: "Chris Flores",
+    email: "lucia.rodriguez@example.com",
+    avatar: profileimage, // Using the uploaded image
+    isOnline: true,
+  }
+
   useEffect(() => {
     if (currentPage) {
       setActiveItem(currentPage)
@@ -138,15 +137,32 @@ function NavBar({ currentPage, onNavigate }) {
           </div>
         </nav>
 
-        {/* Logout Button - Fixed at Bottom of Navbar */}
-        <div className="p-4 border-t border-[#3D6A5A] flex-shrink-0">
-          <button
-            onClick={() => console.log("Logout clicked")}
-            className="group flex items-center gap-3 px-4 py-3 text-white bg-red-600 hover:bg-red-700 rounded-xl transition-all duration-200 transform hover:scale-105 w-full text-left shadow-lg"
-          >
-            <LogOutIcon className="w-5 h-5 transition-transform duration-200 group-hover:scale-110" />
-            <span className="font-medium">Logout</span>
-          </button>
+        {/* Profile Section  */}
+        <div className="p-4 border-t ju border-[#3D6A5A] flex-shrink-0">
+          <div className="flex items-center gap-1  py-2">
+            {/* Profile Avatar with Online Status */}
+            <div className="relative flex-shrink-0">
+              <img
+                src={userProfile.avatar || "/placeholder.svg"}
+                alt={`${userProfile.name}'s profile`}
+                className="w-10 h-10 rounded-full object-cover border-2 border-gray-600"
+                onError={(e) => {
+                  // Fallback to placeholder if image fails to load
+                  e.target.src = "/placeholder.svg?height=40&width=40"
+                }}
+              />
+              {/* Online Status Indicator */}
+              {userProfile.isOnline && (
+                <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-green-500 border-2 border-[#2D5A4A] rounded-full"></div>
+              )}
+            </div>
+
+            {/* Profile Info */}
+            <div className="flex-1 min-w-0">
+              <div className="text-white font-medium text-sm truncate">{userProfile.name}</div>
+              <div className="text-gray-300 text-xs truncate">{userProfile.email}</div>
+            </div>
+          </div>
         </div>
       </div>
     </>
