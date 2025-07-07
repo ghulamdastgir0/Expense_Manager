@@ -1,5 +1,5 @@
 "use client"
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import {
   Tag,
   CreditCard,
@@ -24,11 +24,11 @@ import {
 import InputField from "../auth/inputField"
 import Box from "./Box"
 
-function AddTransaction() {
+function AddTransaction({ preSelectedType = "expense" }) {
   // ===== STATE MANAGEMENT =====
   const [formData, setFormData] = useState({
     title: "",
-    type: "expense",
+    type: preSelectedType, 
     amount: "",
     date: "",
     time: "",
@@ -37,6 +37,13 @@ function AddTransaction() {
   })
 
   const [errors, setErrors] = useState({})
+
+  useEffect(() => {
+    setFormData((prev) => ({
+      ...prev,
+      type: preSelectedType,
+    }))
+  }, [preSelectedType])
 
   // ===== DATA ARRAYS =====
 
@@ -76,7 +83,7 @@ function AddTransaction() {
       [field]: value,
     }))
 
-    // Clear error when user starts typing
+   
     if (errors[field]) {
       setErrors((prev) => ({
         ...prev,
@@ -89,15 +96,22 @@ function AddTransaction() {
     const newErrors = {}
 
     if (!formData.title.trim()) newErrors.title = "Title is required"
-    if (!formData.amount.trim()) newErrors.amount = "Amount is required"
+    if (!formData.amount.trim()) {
+      newErrors.amount = "Amount is required"
+    } else {
+      const amount = Number.parseFloat(formData.amount)
+      if (isNaN(amount)) {
+        newErrors.amount = "Please enter a valid amount"
+      } else if (amount <= 0) {
+        newErrors.amount = "Amount must be greater than zero"
+      } else if (amount < 0) {
+        newErrors.amount = "Amount cannot be negative"
+      }
+    }
     if (!formData.date) newErrors.date = "Date is required"
     if (!formData.time) newErrors.time = "Time is required"
     if (!formData.category) newErrors.category = "Category is required"
     if (!formData.mode) newErrors.mode = "Payment mode is required"
-
-    if (formData.amount && isNaN(Number.parseFloat(formData.amount))) {
-      newErrors.amount = "Please enter a valid amount"
-    }
 
     setErrors(newErrors)
     return Object.keys(newErrors).length === 0
@@ -108,13 +122,12 @@ function AddTransaction() {
 
     if (validateForm()) {
       console.log("Transaction Data:", formData)
-      // Add your submission logic here
-      alert("Transaction added successfully!")
+    
+      alert(`${formData.type === "income" ? "Income" : "Expense"} transaction added successfully!`)
 
-      // Reset form
       setFormData({
         title: "",
-        type: "expense",
+        type: preSelectedType,
         amount: "",
         date: "",
         time: "",
@@ -127,7 +140,7 @@ function AddTransaction() {
   const handleReset = () => {
     setFormData({
       title: "",
-      type: "expense",
+      type: preSelectedType, 
       amount: "",
       date: "",
       time: "",
@@ -154,8 +167,12 @@ function AddTransaction() {
       <div className="max-w-4xl mx-auto space-y-8">
         {/* ===== HEADER SECTION ===== */}
         <div className="text-center space-y-2">
-          <h1 className="text-3xl font-bold text-white">Add Transaction</h1>
-          <p className="text-gray-300">Record your income or expense transaction</p>
+          <h1 className="text-3xl font-bold text-white">
+            Add {formData.type === "income" ? "Income" : "Expense"} Transaction
+          </h1>
+          <p className="text-gray-300">
+            Record your {formData.type === "income" ? "income" : "expense"} transaction details
+          </p>
         </div>
 
         {/* ===== MAIN FORM SECTION ===== */}
@@ -176,7 +193,7 @@ function AddTransaction() {
                         : "border-gray-600 hover:border-gray-500"
                     }`}
                   >
-                    <type.icon className={`w-5 h-5 ${type.color}`} />
+                    <type.icon className={`w-5 h-5 ${formData.type === type.value ? "text-[#4ADE80]" : type.color}`} />
                     <span className={`font-medium ${formData.type === type.value ? "text-[#4ADE80]" : "text-white"}`}>
                       {type.label}
                     </span>
@@ -187,10 +204,14 @@ function AddTransaction() {
 
             {/* Title Field - Using your InputField component */}
             <InputField
-              label="Transaction Title"
+              label={`${formData.type === "income" ? "Income" : "Expense"} Title`}
               type="text"
               id="title"
-              placeholder="e.g., Grocery shopping, Salary payment"
+              placeholder={
+                formData.type === "income"
+                  ? "e.g., Salary payment, Freelance work, Investment return"
+                  : "e.g., Grocery shopping, Utility bill, Transportation"
+              }
               value={formData.title}
               onChange={(e) => handleInputChange("title", e.target.value)}
               required
@@ -203,6 +224,8 @@ function AddTransaction() {
               type="number"
               id="amount"
               placeholder="0.00"
+              min="0.01"
+              step="0.01"
               value={formData.amount}
               onChange={(e) => handleInputChange("amount", e.target.value)}
               required
@@ -319,7 +342,7 @@ function AddTransaction() {
                 className="flex-1 flex items-center justify-center gap-2 bg-[#4ADE80] text-black font-semibold py-3 px-6 rounded-lg hover:bg-[#3BC470] transition-colors duration-200"
               >
                 <Save className="w-5 h-5" />
-                Add Transaction
+                Add {formData.type === "income" ? "Income" : "Expense"}
               </button>
 
               <button
