@@ -179,7 +179,7 @@ function EditProfile({ onNavigate }) {
               <div>
                 <label
                   htmlFor="avatar-upload"
-                  className="flex items-center gap-2 px-4 py-2 bg-[#4ADE80] text-black rounded-lg hover:bg-[#3BC470] transition-colors duration-200 font-medium cursor-pointer inline-flex"
+                  className="flex items-center gap-2 px-4 py-2 bg-[#4ADE80] text-black rounded-lg hover:bg-[#3BC470] transition-colors duration-200 font-medium cursor-pointer"
                 >
                   <Upload className="w-4 h-4" />
                   Choose New Picture
