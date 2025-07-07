@@ -1,6 +1,6 @@
 "use client"
 import { useState } from "react"
-import NavBar from "./NavBar"
+import NavBar from "./navbar"
 import BarChat from "./BarChart"
 import StatBox from "./StatBox"
 import ChartBox from "./ChartBox"
@@ -11,6 +11,8 @@ import { DollarSign, TrendingUp, TrendingDown, CreditCard, Calendar } from "luci
 import TransactionsPage from "./TransactionsPage"
 import History from "./History"
 import SummaryRow from "./Summary_Row"
+import Profile from "./Profile"
+import EditProfile from "./EditProfile"
 
 function Dashboard() {
   // ===== NAVIGATION STATE =====
@@ -248,12 +250,8 @@ function Dashboard() {
           {currentPage === "AddTransaction" && <AddTransaction preSelectedType={transactionType} />}
           {currentPage === "History" && <History onNavigate={handleNavigation} />}
           {currentPage === "Reports" && <Reports onNavigate={handleNavigation} />}
-          {currentPage === "Profile" && (
-            <div className="p-8 text-white">
-              <h1 className="text-3xl font-bold mb-4">Profile</h1>
-              <p className="text-gray-300">Profile page coming soon...</p>
-            </div>
-          )}
+          {currentPage === "Profile" && <Profile onNavigate={handleNavigation} />}
+          {currentPage === "EditProfile" && <EditProfile onNavigate={handleNavigation} />}
           {currentPage === "Settings" && (
             <div className="p-8 text-white">
               <h1 className="text-3xl font-bold mb-4">Settings</h1>
