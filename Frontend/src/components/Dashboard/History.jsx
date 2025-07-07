@@ -1,4 +1,3 @@
-"use client"
 import { useState } from "react"
 import { Search, Download, ArrowUpDown, Eye } from "lucide-react"
 import Box from "./Box"
