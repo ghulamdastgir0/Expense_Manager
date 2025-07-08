@@ -7,12 +7,13 @@ import ChartBox from "./ChartBox"
 import Box from "./Box"
 import AddTransaction from "./Addtransaction"
 import Reports from "./Reports"
-import { DollarSign, TrendingUp, TrendingDown, CreditCard, Calendar } from "lucide-react"
+import { DollarSign, TrendingUp, TrendingDown, CreditCard, Calendar } from "lucide-react" // Added CalendarCheck
 import TransactionsPage from "./TransactionsPage"
 import History from "./History"
 import SummaryRow from "./Summary_Row"
 import Profile from "./Profile"
 import EditProfile from "./EditProfile"
+import Settings from "./Settings"
 
 function Dashboard() {
   // ===== NAVIGATION STATE =====
@@ -20,6 +21,10 @@ function Dashboard() {
   const [transactionType, setTransactionType] = useState("expense") // Track transaction type
 
   // ===== DATA SECTION =====
+
+  // Placeholder for overall budget and expenses (can be fetched from settings/transactions)
+  const overallBudgetLimit = 1000
+  const currentOverallExpenses = 750 // This would be an aggregation of all expenses for the current month
 
   // Stats data for efficient mapping
   const statsData = [
@@ -58,8 +63,8 @@ function Dashboard() {
     },
     {
       id: 4,
-      title: "Savings",
-      value: "$2,050",
+      title: "Last Month Remaining Balance", // Updated title
+      value: "$2,050", // Placeholder value
       icon: CreditCard,
       iconBgColor: "bg-purple-900",
       iconColor: "text-purple-400",
@@ -78,13 +83,6 @@ function Dashboard() {
     { category: "Others", expense: 100 },
   ]
 
-  // Budget data for additional insights
-  const budgetData = [
-    { category: "Food", spent: 400, budget: 500, color: "bg-green-500" },
-    { category: "Transport", spent: 300, budget: 350, color: "bg-yellow-500" },
-    { category: "Entertainment", spent: 200, budget: 250, color: "bg-blue-500" },
-  ]
-
   // Financial summary data for additional insights
   const summaryData = [
     {
@@ -100,11 +98,20 @@ function Dashboard() {
       textColor: "text-red-400",
     },
     {
-      label: "Net Savings",
-      value: "$2,050",
+      label: "Last Month Remaining Balance", // Updated label
+      value: "$2,050", // Placeholder value
       bg: "bg-blue-900/20",
       textColor: "text-blue-400",
     },
+  ]
+
+  // Upcoming payments data
+  const upcomingPayments = [
+    { id: 1, name: "Rent", amount: 1200, dueDate: "2025-07-01", status: "due" },
+    { id: 2, name: "Electricity Bill", amount: 85, dueDate: "2025-07-10", status: "due" },
+    { id: 3, name: "Internet Bill", amount: 60, dueDate: "2025-07-15", status: "due" },
+    { id: 4, name: "Car Loan", amount: 350, dueDate: "2025-07-20", status: "due" },
+    { id: 5, name: "Gym Membership", amount: 45, dueDate: "2025-07-25", status: "due" },
   ]
 
   // ===== EVENT HANDLERS =====
@@ -129,93 +136,117 @@ function Dashboard() {
   // ===== RENDER FUNCTIONS =====
 
   // Render Dashboard Content
-  const renderDashboardContent = () => (
-    <div className="p-3 sm:p-4 md:p-6 lg:p-8 bg-black text-white space-y-8">
-      {/* ===== HEADER SECTION ===== */}
-      <div className="space-y-1">
-        <h1 className="text-3xl font-bold text-white hidden lg:block">Dashboard</h1>
-        <p className="text-gray-300 text-sm lg:text-base">Welcome back! Here's your financial overview.</p>
-      </div>
+  const renderDashboardContent = () => {
+    const overallBudgetPercentage = overallBudgetLimit > 0 ? (currentOverallExpenses / overallBudgetLimit) * 100 : 0
+    const budgetRemaining = overallBudgetLimit - currentOverallExpenses
+    const budgetStatusText =
+      overallBudgetLimit > 0
+        ? overallBudgetPercentage > 100
+          ? `Exceeded by $${Math.abs(budgetRemaining).toFixed(2)}`
+          : overallBudgetPercentage === 100
+            ? "Budget Reached"
+            : `$${budgetRemaining.toFixed(2)} Remaining`
+        : "No budget set"
 
-      {/* ===== STATS CARDS SECTION ===== */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        {statsData.map((stat) => (
-          <StatBox
-            key={stat.id}
-            title={stat.title}
-            value={stat.value}
-            icon={stat.icon}
-            iconBgColor={stat.iconBgColor}
-            iconColor={stat.iconColor}
-            trend={stat.trend}
-            trendValue={stat.trendValue}
-            trendLabel={stat.trendLabel}
-            onClick={() => handleStatClick(stat)}
-            className="cursor-pointer hover:shadow-xl hover:scale-[1.02] transition-all duration-200"
-          />
-        ))}
-      </div>
+    return (
+      <div className="p-3 sm:p-4 md:p-6 lg:p-8 bg-black text-white space-y-8">
+        {/* ===== HEADER SECTION ===== */}
+        <div className="space-y-1">
+          <h1 className="text-3xl font-bold text-white">Dashboard</h1>
+          <p className="text-gray-300 text-sm lg:text-base">Welcome back! Here's your financial overview.</p>
+        </div>
 
-      {/* ===== CHARTS SECTION ===== */}
-      <div className="grid grid-cols-1 gap-4">
-        {/* Bar Chart */}
-        <ChartBox
-          title="Top 5 Expenses"
-          headerAction={
-            <div className="flex items-center space-x-2 text-gray-400 text-sm">
-              <Calendar className="w-4 h-4" />
-              <span>This Month</span>
-            </div>
-          }
-          className="shadow-lg"
-        >
-          <BarChat data={listOfData} dataKey="expense" />
-        </ChartBox>
-      </div>
+        {/* ===== STATS CARDS SECTION ===== */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          {statsData.map((stat) => (
+            <StatBox
+              key={stat.id}
+              title={stat.title}
+              value={stat.value}
+              icon={stat.icon}
+              iconBgColor={stat.iconBgColor}
+              iconColor={stat.iconColor}
+              trend={stat.trend}
+              trendValue={stat.trendValue}
+              trendLabel={stat.trendLabel}
+              onClick={() => handleStatClick(stat)}
+              className="cursor-pointer hover:shadow-xl hover:scale-[1.02] transition-all duration-200"
+            />
+          ))}
+        </div>
 
-      {/* ===== ADDITIONAL INSIGHTS SECTION ===== */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        {/* Budget Progress */}
-        <Box title="Budget Progress" subtitle="Monthly budget tracking" className="shadow-lg">
-          <div className="space-y-4">
-            {budgetData.map((item, index) => (
-              <div key={index} className="space-y-2">
-                <div className="flex justify-between text-sm">
-                  <span className="text-white">{item.category}</span>
-                  <span className="text-gray-400">
-                    ${item.spent}/${item.budget}
-                  </span>
-                </div>
-                <div className="w-full bg-gray-700 rounded-full h-2">
-                  <div
-                    className={`${item.color} h-2 rounded-full transition-all duration-500`}
-                    style={{ width: `${(item.spent / item.budget) * 100}%` }}
-                  ></div>
-                </div>
-                <p className="text-xs text-gray-400">{Math.round((item.spent / item.budget) * 100)}% of budget used</p>
+        {/* ===== CHARTS SECTION ===== */}
+        <div className="grid grid-cols-1 gap-4">
+          {/* Bar Chart */}
+          <ChartBox
+            title="Top 5 Expenses"
+            headerAction={
+              <div className="flex items-center space-x-2 text-gray-400 text-sm">
+                <Calendar className="w-4 h-4" />
+                <span>This Month</span>
               </div>
-            ))}
-          </div>
-        </Box>
+            }
+            className="shadow-lg"
+          >
+            <BarChat data={listOfData} dataKey="expense" />
+          </ChartBox>
+        </div>
 
-        {/* Financial Summary */}
-        <Box title="Financial Summary" subtitle="This month overview" className="shadow-lg">
-          <div className="space-y-4">
-            {summaryData.map((item, index) => (
-              <SummaryRow key={index} {...item} />
-            ))}
+        {/* ===== ADDITIONAL INSIGHTS SECTION ===== */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          {/* Budget Progress - Consolidated */}
+          <Box title="Budget Progress" subtitle="Monthly spending against your budget" className="shadow-lg">
+            <div className="space-y-4">
+              {/* Budget Limit */}
+              <SummaryRow
+                label="Monthly Budget Limit"
+                value={`$${overallBudgetLimit.toFixed(2)}`}
+                bg="bg-green-900/20"
+                textColor="text-green-400"
+              />
 
-            <div className="pt-2 border-t border-gray-700">
-              <div className="flex justify-between items-center">
-                <span className="text-gray-300 text-sm">Savings Rate</span>
-                <span className="text-[#4ADE80] font-bold">39.4%</span>
+              {/* Remaining Budget */}
+              <SummaryRow
+                label="Remaining Budget"
+                value={`$${budgetRemaining.toFixed(2)}`}
+                bg={"bg-red-900/20"}
+                textColor={"text-red-400"}
+              />
+
+              {/* Usage Percentage */}
+              <SummaryRow
+                label="Budget Usage"
+                value={`${overallBudgetPercentage.toFixed(1)}%`}
+                bg={"bg-blue-900/20"}
+                textColor={"text-blue-400"}
+              />
+
+              {/* Action to manage budgets */}
+              <div className="pt-4 text-center">
+                <button
+                  onClick={() => handleNavigation("Settings")}
+                  className="px-6 py-3 bg-[#4ADE80] text-black font-semibold rounded-lg hover:bg-[#3BC470] transition-colors duration-200"
+                >
+                  Manage Budget Settings
+                </button>
               </div>
             </div>
-          </div>
-        </Box>
+          </Box>
+
+          {/* Financial Summary */}
+          <Box title="Financial Summary" subtitle="This month overview" className="shadow-lg">
+            <div className="space-y-4">
+              {summaryData.map((item, index) => (
+                <SummaryRow key={index} {...item} />
+              ))}
+
+            
+            </div>
+          </Box>
+        </div>
       </div>
-    </div>
-  )
+    )
+  }
 
   // ===== MAIN RENDER =====
   return (
@@ -252,12 +283,7 @@ function Dashboard() {
           {currentPage === "Reports" && <Reports onNavigate={handleNavigation} />}
           {currentPage === "Profile" && <Profile onNavigate={handleNavigation} />}
           {currentPage === "EditProfile" && <EditProfile onNavigate={handleNavigation} />}
-          {currentPage === "Settings" && (
-            <div className="p-8 text-white">
-              <h1 className="text-3xl font-bold mb-4">Settings</h1>
-              <p className="text-gray-300">Settings page coming soon...</p>
-            </div>
-          )}
+          {currentPage === "Settings" && <Settings onNavigate={handleNavigation} />}
         </div>
       </main>
     </div>
