@@ -1,6 +1,6 @@
 "use client"
 import { useState } from "react"
-import NavBar from "./navbar"
+import NavBar from "./NavBar"
 import BarChat from "./BarChart"
 import StatBox from "./StatBox"
 import ChartBox from "./ChartBox"
@@ -252,12 +252,10 @@ function Dashboard() {
           {currentPage === "Reports" && <Reports onNavigate={handleNavigation} />}
           {currentPage === "Profile" && <Profile onNavigate={handleNavigation} />}
           {currentPage === "EditProfile" && <EditProfile onNavigate={handleNavigation} />}
-          {currentPage === "Settings" && (
-            <div className="p-8 text-white">
-              <h1 className="text-3xl font-bold mb-4">Settings</h1>
-              <p className="text-gray-300">Settings page coming soon...</p>
-            </div>
-          )}
+          {currentPage === "Settings" && <div>
+            <h2 className="text-2xl font-bold text-white">Settings</h2>
+            <p className="text-gray-400">Settings content goes here.</p>
+          </div>}
         </div>
       </main>
     </div>
