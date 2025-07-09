@@ -283,12 +283,7 @@ function Dashboard() {
           {currentPage === "Reports" && <Reports onNavigate={handleNavigation} />}
           {currentPage === "Profile" && <Profile onNavigate={handleNavigation} />}
           {currentPage === "EditProfile" && <EditProfile onNavigate={handleNavigation} />}
-          {currentPage === "Settings" && (
-            <div className="p-8 text-white">
-              <h1 className="text-3xl font-bold mb-4">Settings</h1>
-              <p className="text-gray-300">Settings page coming soon...</p>
-            </div>
-          )}
+          {currentPage === "Settings" && <Settings onNavigate={handleNavigation} />}
         </div>
       </main>
     </div>

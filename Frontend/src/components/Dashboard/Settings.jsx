@@ -1,6 +1,24 @@
 "use client"
+
 import { useState, useEffect, useRef } from "react"
-import { Trash2, LogOut, UserX, Save, X, ChevronDown, Clock, KeyRound } from "lucide-react"
+import {
+  Trash2,
+  UserX,
+  Save,
+  X,
+  ChevronDown,
+  Clock,
+  KeyRound,
+  SettingsIcon,
+  DollarSign,
+  Globe,
+  Shield,
+  AlertTriangle,
+  CreditCard,
+  Calendar,
+  Eye,
+  EyeOff,
+} from "lucide-react"
 import Box from "./Box"
 import InputField from "../auth/inputField"
 
@@ -15,9 +33,18 @@ function Settings({ onNavigate }) {
   const [errors, setErrors] = useState({})
   const [isLoading, setIsLoading] = useState(false)
   const [showDeleteAccountDialog, setShowDeleteAccountDialog] = useState(false)
-  const [showDeleteDataDialog, setShowDeleteDataDialog] = useState(false) // New state for delete data dialog
+  const [showDeleteDataDialog, setShowDeleteDataDialog] = useState(false)
   const [showCurrencyDropdown, setShowCurrencyDropdown] = useState(false)
   const currencyDropdownRef = useRef(null)
+
+  const [showTimezoneDropdown, setShowTimezoneDropdown] = useState(false)
+  const [timezoneSearch, setTimezoneSearch] = useState("")
+  const timezoneDropdownRef = useRef(null)
+
+  // Password visibility states
+  const [showCurrentPassword, setShowCurrentPassword] = useState(false)
+  const [showNewPassword, setShowNewPassword] = useState(false)
+  const [showRetypePassword, setShowRetypePassword] = useState(false)
 
   // State for the password change modal
   const [showPasswordModal, setShowPasswordModal] = useState(false)
@@ -65,7 +92,7 @@ function Settings({ onNavigate }) {
   const generateAllTimezoneOffsets = () => {
     const offsets = []
     for (let h = -12; h <= 12; h++) {
-      for (let m = 0; m <= 30&&h<13; m += 30) {
+      for (let m = 0; m <= 30 && h < 13; m += 30) {
         const sign = h < 0 ? "-" : "+"
         const absH = Math.abs(h)
         const hourStr = String(absH).padStart(2, "0")
@@ -133,6 +160,9 @@ function Settings({ onNavigate }) {
     `${c.code} (${c.symbol}) - ${c.name}`.toLowerCase().includes(currencySearch.toLowerCase()),
   )
 
+  // Filtered timezones based on search input
+  const filteredTimezones = timezoneOptions.filter((tz) => tz.toLowerCase().includes(timezoneSearch.toLowerCase()))
+
   // Handle currency selection from dropdown
   const handleCurrencySelect = (selectedCurrency) => {
     setCurrency(selectedCurrency.code)
@@ -140,11 +170,31 @@ function Settings({ onNavigate }) {
     setShowCurrencyDropdown(false)
   }
 
+  // Handle timezone selection from dropdown
+  const handleTimezoneSelect = (selectedTimezone) => {
+    setTimezone(selectedTimezone)
+    setShowTimezoneDropdown(false)
+    setTimezoneSearch("")
+  }
+
   // Close currency dropdown when clicking outside
   useEffect(() => {
     const handleClickOutside = (event) => {
       if (currencyDropdownRef.current && !currencyDropdownRef.current.contains(event.target)) {
         setShowCurrencyDropdown(false)
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside)
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside)
+    }
+  }, [])
+
+  // Close timezone dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (timezoneDropdownRef.current && !timezoneDropdownRef.current.contains(event.target)) {
+        setShowTimezoneDropdown(false)
       }
     }
     document.addEventListener("mousedown", handleClickOutside)
@@ -194,7 +244,7 @@ function Settings({ onNavigate }) {
       alert("Failed to delete data. Please try again.")
     } finally {
       setIsLoading(false)
-      setShowDeleteDataDialog(false) // Close the dialog
+      setShowDeleteDataDialog(false)
     }
   }
 
@@ -221,7 +271,6 @@ function Settings({ onNavigate }) {
   const validatePasswordChange = () => {
     const newModalErrors = {}
     if (currentPasswordModal !== "password123") {
-      // Placeholder for actual validation
       newModalErrors.currentPassword = "Existing password is incorrect."
     }
     if (!newPasswordModal) {
@@ -263,208 +312,439 @@ function Settings({ onNavigate }) {
   }
 
   return (
-    <div className="p-3 sm:p-4 md:p-6 lg:p-8 bg-black text-white space-y-8">
-      {/* ===== HEADER SECTION ===== */}
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-        <div>
-          <h1 className="text-3xl font-bold text-white">Settings</h1>
-          <p className="text-gray-300 text-sm">Manage your application preferences and account settings</p>
-        </div>
-      </div>
-
-      <form onSubmit={handleSaveSettings} className="space-y-8">
-        {/* ===== CURRENCY SELECTION ===== */}
-        <Box title="Currency Preference" subtitle="Choose your preferred currency" className="shadow-lg">
-          <div className="relative" ref={currencyDropdownRef}>
-            <label htmlFor="currency-search" className="block text-sm font-medium text-gray-300 mb-2">
-              Select Currency
-            </label>
-            <div className="relative">
-              <InputField
-                id="currency-search"
-                type="text"
-                placeholder="Search currency..."
-                value={currencySearch}
-                onChange={(e) => {
-                  setCurrencySearch(e.target.value)
-                  setShowCurrencyDropdown(true)
-                }}
-                onFocus={() => setShowCurrencyDropdown(true)}
-                className="pr-10"
-              />
-              <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 w-5 h-5 pointer-events-none" />
+    <div className="min-h-screen p-4 sm:p-6 lg:p-8 bg-black text-white">
+      <div className="max-w-4xl mx-auto space-y-8">
+        {/* ===== HEADER SECTION ===== */}
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-6 mb-10">
+          <div className="flex items-center gap-4">
+            <div className="p-3 bg-gray-800 rounded-xl">
+              <SettingsIcon className="w-8 h-8 text-[#4ADE80]" />
             </div>
-            {showCurrencyDropdown && (
-              <div className="absolute z-10 w-full bg-gray-800 border border-gray-700 rounded-lg mt-1 max-h-60 overflow-y-auto shadow-lg">
-                {filteredCurrencies.length > 0 ? (
-                  filteredCurrencies.map((c) => (
-                    <button
-                      key={c.code}
-                      type="button"
-                      onClick={() => handleCurrencySelect(c)}
-                      className="block w-full text-left px-4 py-2 text-white hover:bg-gray-700 transition-colors"
-                    >
-                      {c.code} ({c.symbol}) - {c.name}
-                    </button>
-                  ))
-                ) : (
-                  <div className="px-4 py-2 text-gray-400">No currencies found.</div>
-                )}
-              </div>
-            )}
-          </div>
-        </Box>
-
-        {/* ===== TIMEZONE SELECTION ===== */}
-        <Box title="Timezone Preference" subtitle="Set your local timezone and view current time" className="shadow-lg">
-          <div>
-            <label htmlFor="timezone" className="block text-sm font-medium text-gray-300 mb-2">
-              Select Timezone
-            </label>
-            <select
-              id="timezone"
-              value={timezone}
-              onChange={(e) => setTimezone(e.target.value)}
-              className="w-full px-4 py-3 bg-white text-black rounded-lg border-0 focus:ring-2 focus:ring-green-500 focus:outline-none appearance-none"
-            >
-              {timezoneOptions.map((tz) => (
-                <option key={tz} value={tz}>
-                  {tz}
-                </option>
-              ))}
-            </select>
-            <div className="flex items-center gap-2 mt-3 text-gray-300 text-sm">
-              <Clock className="w-4 h-4" />
-              <span>Current time in selected timezone: {currentTimeInTimezone}</span>
-            </div>
-          </div>
-        </Box>
-
-        {/* ===== BUDGET LIMIT SETUP ===== */}
-        <Box title="Budget Limit Setup" subtitle="Set your monthly spending target" className="shadow-lg">
-          <div>
-            <InputField
-              label="Monthly Budget Limit"
-              type="number"
-              id="budgetLimit"
-              placeholder="e.g., 1000.00"
-              value={budgetLimit}
-              onChange={(e) => setBudgetLimit(e.target.value)}
-              min="0"
-              step="0.01"
-            />
-            {errors.budgetLimit && <p className="text-red-400 text-sm mt-1">{errors.budgetLimit}</p>}
-            <p className="text-xs text-gray-400 mt-2">
-              This limit will be used to track your expenses and provide insights.
-            </p>
-          </div>
-        </Box>
-
-
-        {/* ===== ACTION BUTTONS ===== */}
-        <div className="flex flex-col sm:flex-row gap-4 pt-6">
-          <button
-            type="submit"
-            disabled={isLoading}
-            className="flex-1 flex items-center justify-center gap-2 bg-[#4ADE80] text-black font-semibold py-3 px-6 rounded-lg hover:bg-[#3BC470] transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            <Save className="w-5 h-5" />
-            {isLoading ? "Saving..." : "Save Changes"}
-          </button>
-
-          <button
-            type="button"
-            onClick={() => onNavigate("Dashboard")}
-            className="flex items-center justify-center gap-2 bg-gray-700 text-white font-semibold py-3 px-6 rounded-lg hover:bg-gray-600 transition-colors duration-200"
-          >
-            <X className="w-5 h-5" />
-            Cancel
-          </button>
-        </div>
-      </form>
-
-
-        {/* ===== PASSWORD MANAGEMENT ===== */}
-        <Box title="Password Management" subtitle="Change your account password" className="shadow-lg">
-          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 p-4 bg-gray-800/30 rounded-lg">
             <div>
-              <h3 className="text-lg font-semibold text-white">Change Password</h3>
-              <p className="text-sm text-gray-300">Update your account password securely.</p>
+              <h1 className="text-4xl font-bold text-white mb-2">Settings</h1>
+              <p className="text-gray-400 text-lg">Manage your application preferences and account settings</p>
             </div>
+          </div>
+        </div>
+
+        <form onSubmit={handleSaveSettings} className="space-y-8">
+          {/* ===== CURRENCY SELECTION ===== */}
+          <Box
+            title="Currency Preference"
+            subtitle="Choose your preferred currency for transactions"
+            className="shadow-2xl"
+          >
+            <div className="p-6">
+              <div className="flex items-center gap-3 mb-6">
+                <div className="p-2 bg-[#4ADE80]/10 rounded-lg">
+                  <DollarSign className="w-6 h-6 text-[#4ADE80]" />
+                </div>
+                <div>
+                  <h3 className="text-xl font-semibold text-white">Currency Settings</h3>
+                  <p className="text-gray-400">Select your default currency for all transactions</p>
+                </div>
+              </div>
+
+              <div className="relative" ref={currencyDropdownRef}>
+                <label htmlFor="currency-search" className="block text-sm font-medium text-gray-300 mb-3">
+                  Select Currency
+                </label>
+                <div className="relative">
+                  <button
+                    type="button"
+                    onClick={() => setShowCurrencyDropdown(!showCurrencyDropdown)}
+                    className="w-full px-4 py-4 bg-white text-black rounded-xl border-0 focus:ring-2 focus:ring-[#4ADE80] focus:outline-none text-lg font-medium text-left flex items-center justify-between hover:bg-gray-50 transition-colors"
+                  >
+                    <span>{currencySearch}</span>
+                    <ChevronDown
+                      className={`w-6 h-6 text-gray-600 transition-transform duration-200 ${showCurrencyDropdown ? "rotate-180" : ""}`}
+                    />
+                  </button>
+                </div>
+
+                {showCurrencyDropdown && (
+                  <div className="absolute z-20 w-full bg-gray-800 border border-gray-600 rounded-xl mt-2 max-h-64 overflow-hidden shadow-2xl">
+                    {/* Search Input */}
+                    <div className="p-3 border-b border-gray-700">
+                      <input
+                        type="text"
+                        placeholder="Search currencies..."
+                        value={currencySearch.includes(" - ") ? "" : currencySearch}
+                        onChange={(e) => setCurrencySearch(e.target.value)}
+                        className="w-full px-3 py-2 bg-gray-700 text-white rounded-lg border border-gray-600 focus:ring-2 focus:ring-[#4ADE80] focus:outline-none placeholder-gray-400"
+                        autoFocus
+                      />
+                    </div>
+
+                    {/* Currency Options */}
+                    <div className="max-h-48 overflow-y-auto">
+                      {filteredCurrencies.length > 0 ? (
+                        filteredCurrencies.map((c) => (
+                          <button
+                            key={c.code}
+                            type="button"
+                            onClick={() => handleCurrencySelect(c)}
+                            className="block w-full text-left px-6 py-4 text-white hover:bg-gray-700 transition-colors border-b border-gray-700/50 last:border-b-0 group"
+                          >
+                            <div className="flex items-center justify-between">
+                              <div className="flex items-center gap-3">
+                                <span className="font-mono text-[#4ADE80] font-bold text-lg min-w-[3rem]">
+                                  {c.symbol}
+                                </span>
+                                <div>
+                                  <span className="font-semibold text-white group-hover:text-[#4ADE80] transition-colors">
+                                    {c.code}
+                                  </span>
+                                  <span className="text-gray-300 ml-2">- {c.name}</span>
+                                </div>
+                              </div>
+                              {currency === c.code && <div className="w-2 h-2 bg-[#4ADE80] rounded-full"></div>}
+                            </div>
+                          </button>
+                        ))
+                      ) : (
+                        <div className="px-6 py-8 text-center">
+                          <DollarSign className="w-8 h-8 text-gray-500 mx-auto mb-2" />
+                          <p className="text-gray-400">No currencies found</p>
+                          <p className="text-gray-500 text-sm">Try a different search term</p>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
+
+                {/* Selected Currency Display */}
+                <div className="mt-4 p-4 bg-gray-800/30 rounded-xl border border-gray-700">
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 bg-[#4ADE80]/10 rounded-lg">
+                      <span className="font-mono text-[#4ADE80] font-bold text-xl">
+                        {currencyOptions.find((c) => c.code === currency)?.symbol || "$"}
+                      </span>
+                    </div>
+                    <div>
+                      <p className="text-white font-semibold">Selected Currency: {currency}</p>
+                      <p className="text-gray-400 text-sm">
+                        {currencyOptions.find((c) => c.code === currency)?.name || "US Dollar"}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </Box>
+
+          {/* ===== TIMEZONE SELECTION ===== */}
+          <Box
+            title="Timezone Preference"
+            subtitle="Set your local timezone and view current time"
+            className="shadow-2xl"
+          >
+            <div className="p-6">
+              <div className="flex items-center gap-3 mb-6">
+                <div className="p-2 bg-[#4ADE80]/10 rounded-lg">
+                  <Globe className="w-6 h-6 text-[#4ADE80]" />
+                </div>
+                <div>
+                  <h3 className="text-xl font-semibold text-white">Timezone Settings</h3>
+                  <p className="text-gray-400">Configure your local timezone for accurate time display</p>
+                </div>
+              </div>
+
+              <div className="space-y-4">
+                <label htmlFor="timezone" className="block text-sm font-medium text-gray-300 mb-3">
+                  Select Timezone
+                </label>
+
+                <div className="relative" ref={timezoneDropdownRef}>
+                  <button
+                    type="button"
+                    onClick={() => setShowTimezoneDropdown(!showTimezoneDropdown)}
+                    className="w-full px-4 py-4 bg-white text-black rounded-xl border-0 focus:ring-2 focus:ring-[#4ADE80] focus:outline-none text-lg font-medium text-left flex items-center justify-between hover:bg-gray-50 transition-colors"
+                  >
+                    <span>{timezone}</span>
+                    <ChevronDown
+                      className={`w-6 h-6 text-gray-600 transition-transform duration-200 ${showTimezoneDropdown ? "rotate-180" : ""}`}
+                    />
+                  </button>
+
+                  {showTimezoneDropdown && (
+                    <div className="absolute z-20 w-full bg-gray-800 border border-gray-600 rounded-xl mt-2 max-h-64 overflow-hidden shadow-2xl">
+                      {/* Search Input */}
+                      <div className="p-3 border-b border-gray-700">
+                        <input
+                          type="text"
+                          placeholder="Search timezones..."
+                          value={timezoneSearch}
+                          onChange={(e) => setTimezoneSearch(e.target.value)}
+                          className="w-full px-3 py-2 bg-gray-700 text-white rounded-lg border border-gray-600 focus:ring-2 focus:ring-[#4ADE80] focus:outline-none placeholder-gray-400"
+                          autoFocus
+                        />
+                      </div>
+
+                      {/* Timezone Options */}
+                      <div className="max-h-48 overflow-y-auto">
+                        {filteredTimezones.length > 0 ? (
+                          filteredTimezones.map((tz) => (
+                            <button
+                              key={tz}
+                              type="button"
+                              onClick={() => handleTimezoneSelect(tz)}
+                              className="block w-full text-left px-6 py-4 text-white hover:bg-gray-700 transition-colors border-b border-gray-700/50 last:border-b-0 group"
+                            >
+                              <div className="flex items-center justify-between">
+                                <div className="flex items-center gap-3">
+                                  <Globe className="w-5 h-5 text-[#4ADE80]" />
+                                  <span className="font-semibold text-white group-hover:text-[#4ADE80] transition-colors">
+                                    {tz}
+                                  </span>
+                                </div>
+                                {timezone === tz && <div className="w-2 h-2 bg-[#4ADE80] rounded-full"></div>}
+                              </div>
+                            </button>
+                          ))
+                        ) : (
+                          <div className="px-6 py-8 text-center">
+                            <Globe className="w-8 h-8 text-gray-500 mx-auto mb-2" />
+                            <p className="text-gray-400">No timezones found</p>
+                            <p className="text-gray-500 text-sm">Try a different search term</p>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Selected Timezone Display */}
+                  <div className="mt-4 p-4 bg-gray-800/30 rounded-xl border border-gray-700">
+                    <div className="flex items-center gap-3">
+                      <div className="p-2 bg-[#4ADE80]/10 rounded-lg">
+                        <Globe className="w-6 h-6 text-[#4ADE80]" />
+                      </div>
+                      <div>
+                        <p className="text-white font-semibold">Selected Timezone: {timezone}</p>
+                        <p className="text-gray-400 text-sm">Current local time: {currentTimeInTimezone}</p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-3 mt-6 p-4 bg-gray-800/50 rounded-xl">
+                  <Clock className="w-5 h-5 text-[#4ADE80]" />
+                  <span className="text-gray-300 text-lg">Current time in selected timezone:</span>
+                  <span className="font-mono text-xl text-[#4ADE80] font-bold">{currentTimeInTimezone}</span>
+                </div>
+              </div>
+            </div>
+          </Box>
+
+          {/* ===== BUDGET LIMIT SETUP ===== */}
+          <Box title="Budget Management" subtitle="Set your monthly spending target and limits" className="shadow-2xl">
+            <div className="p-6">
+              <div className="flex items-center gap-3 mb-6">
+                <div className="p-2 bg-[#4ADE80]/10 rounded-lg">
+                  <CreditCard className="w-6 h-6 text-[#4ADE80]" />
+                </div>
+                <div>
+                  <h3 className="text-xl font-semibold text-white">Budget Limit Setup</h3>
+                  <p className="text-gray-400">Set monthly spending targets to track your expenses</p>
+                </div>
+              </div>
+
+              <div className="space-y-4">
+                <InputField
+                  label="Monthly Budget Limit"
+                  type="number"
+                  id="budgetLimit"
+                  placeholder="e.g., 1000.00"
+                  value={budgetLimit}
+                  onChange={(e) => setBudgetLimit(e.target.value)}
+                  min="0"
+                  step="0.01"
+                  className="h-12 text-lg"
+                />
+                {errors.budgetLimit && <p className="text-red-400 text-sm mt-2">{errors.budgetLimit}</p>}
+                <div className="flex items-start gap-3 p-4 bg-blue-900/20 rounded-xl border border-blue-500/30">
+                  <Calendar className="w-5 h-5 text-blue-400 mt-0.5 flex-shrink-0" />
+                  <p className="text-sm text-blue-300">
+                    This limit will be used to track your expenses and provide insights. You'll receive notifications
+                    when approaching your limit.
+                  </p>
+                </div>
+              </div>
+            </div>
+          </Box>
+
+          {/* ===== ACTION BUTTONS ===== */}
+          <div className="flex flex-col sm:flex-row gap-4 pt-8">
+            <button
+              type="submit"
+              disabled={isLoading}
+              className="flex-1 flex items-center justify-center gap-3 bg-[#4ADE80] text-black font-bold py-4 px-8 rounded-xl hover:bg-[#3BC470] transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed text-lg shadow-lg hover:shadow-xl transform hover:-translate-y-0.5"
+            >
+              <Save className="w-6 h-6" />
+              {isLoading ? "Saving Changes..." : "Save All Changes"}
+            </button>
+
             <button
               type="button"
-              className="inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 bg-gray-700 text-white hover:bg-gray-600 h-10 px-4 py-2"
-              onClick={() => setShowPasswordModal(true)}
+              onClick={() => onNavigate("Dashboard")}
+              className="flex items-center justify-center gap-3 bg-gray-700 text-white font-bold py-4 px-8 rounded-xl hover:bg-gray-600 transition-all duration-200 text-lg shadow-lg hover:shadow-xl transform hover:-translate-y-0.5"
             >
-              <KeyRound className="w-4 h-4 mr-2" />
-              Change Password
+              <X className="w-6 h-6" />
+              Cancel Changes
             </button>
+          </div>
+        </form>
+
+        {/* ===== PASSWORD MANAGEMENT ===== */}
+        <Box
+          title="Security Settings"
+          subtitle="Manage your account password and security preferences"
+          className="shadow-2xl"
+        >
+          <div className="p-6">
+            <div className="flex items-center gap-3 mb-6">
+              <div className="p-2 bg-[#4ADE80]/10 rounded-lg">
+                <Shield className="w-6 h-6 text-[#4ADE80]" />
+              </div>
+              <div>
+                <h3 className="text-xl font-semibold text-white">Password Management</h3>
+                <p className="text-gray-400">Keep your account secure with a strong password</p>
+              </div>
+            </div>
+
+            <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6 p-6 bg-gray-800/30 rounded-xl border border-gray-700">
+              <div className="flex items-center gap-4">
+                <div className="p-3 bg-gray-700 rounded-lg">
+                  <KeyRound className="w-6 h-6 text-[#4ADE80]" />
+                </div>
+                <div>
+                  <h4 className="text-lg font-semibold text-white">Change Password</h4>
+                  <p className="text-sm text-gray-300">Update your account password securely</p>
+                  <p className="text-xs text-gray-400 mt-1">Last changed: Never</p>
+                </div>
+              </div>
+              <button
+                type="button"
+                className="inline-flex items-center justify-center gap-3 bg-gray-700 text-white hover:bg-gray-600 font-semibold py-3 px-6 rounded-lg transition-all duration-200 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5"
+                onClick={() => setShowPasswordModal(true)}
+              >
+                <KeyRound className="w-5 h-5" />
+                Change Password
+              </button>
+            </div>
           </div>
         </Box>
 
         {/* ===== DANGER ZONE ACTIONS ===== */}
-        <Box title="Danger Zone" subtitle="Irreversible actions" className="shadow-lg border-red-500/20">
-          <div className="space-y-4">
-            {/* Delete All Previous Data */}
-            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 p-4 bg-red-900/10 rounded-lg">
-              <div>
-                <h3 className="text-lg font-semibold text-red-400">Delete All Previous Data</h3>
-                <p className="text-sm text-red-300">Permanently remove all your transaction history and data.</p>
+        <Box
+          title="Danger Zone"
+          subtitle="Irreversible actions that permanently affect your account"
+          className="shadow-2xl border-red-500/30"
+        >
+          <div className="p-6">
+            <div className="flex items-center gap-3 mb-6">
+              <div className="p-2 bg-red-500/10 rounded-lg">
+                <AlertTriangle className="w-6 h-6 text-red-400" />
               </div>
-              <button
-                type="button"
-                className="inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 bg-red-600 hover:bg-red-700 text-white h-10 px-4 py-2"
-                onClick={() => setShowDeleteDataDialog(true)} // Open confirmation dialog
-                disabled={isLoading}
-              >
-                <Trash2 className="w-4 h-4 mr-2" />
-                Delete All Data
-              </button>
+              <div>
+                <h3 className="text-xl font-semibold text-red-400">Danger Zone</h3>
+                <p className="text-red-300">These actions cannot be undone. Please proceed with caution.</p>
+              </div>
             </div>
 
-            {/* Delete Account */}
-            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 p-4 bg-red-900/10 rounded-lg">
-              <div>
-                <h3 className="text-lg font-semibold text-red-400">Delete Account</h3>
-                <p className="text-sm text-red-300">Permanently delete your account and all associated data.</p>
+            <div className="space-y-6">
+              {/* Delete All Previous Data */}
+              <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6 p-6 bg-red-900/10 rounded-xl border border-red-500/30">
+                <div className="flex items-center gap-4">
+                  <div className="p-3 bg-red-500/20 rounded-lg">
+                    <Trash2 className="w-6 h-6 text-red-400" />
+                  </div>
+                  <div>
+                    <h4 className="text-lg font-semibold text-red-400">Delete All Previous Data</h4>
+                    <p className="text-sm text-red-300">Permanently remove all your transaction history and data</p>
+                    <p className="text-xs text-red-400 mt-1">This will not delete your account, only your data</p>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  className="inline-flex items-center justify-center gap-3 bg-red-600 hover:bg-red-700 text-white font-semibold py-3 px-6 rounded-lg transition-all duration-200 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5"
+                  onClick={() => setShowDeleteDataDialog(true)}
+                  disabled={isLoading}
+                >
+                  <Trash2 className="w-5 h-5" />
+                  Delete All Data
+                </button>
               </div>
-              <button
-                type="button"
-                className="inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 bg-red-600 hover:bg-red-700 text-white h-10 px-4 py-2"
-                onClick={() => setShowDeleteAccountDialog(true)}
-                disabled={isLoading}
-              >
-                <UserX className="w-4 h-4 mr-2" />
-                Delete Account
-              </button>
+
+              {/* Delete Account */}
+              <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6 p-6 bg-red-900/10 rounded-xl border border-red-500/30">
+                <div className="flex items-center gap-4">
+                  <div className="p-3 bg-red-500/20 rounded-lg">
+                    <UserX className="w-6 h-6 text-red-400" />
+                  </div>
+                  <div>
+                    <h4 className="text-lg font-semibold text-red-400">Delete Account</h4>
+                    <p className="text-sm text-red-300">Permanently delete your account and all associated data</p>
+                    <p className="text-xs text-red-400 mt-1">This action is irreversible and immediate</p>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  className="inline-flex items-center justify-center gap-3 bg-red-600 hover:bg-red-700 text-white font-semibold py-3 px-6 rounded-lg transition-all duration-200 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5"
+                  onClick={() => setShowDeleteAccountDialog(true)}
+                  disabled={isLoading}
+                >
+                  <UserX className="w-5 h-5" />
+                  Delete Account
+                </button>
+              </div>
             </div>
           </div>
         </Box>
+      </div>
 
-        
       {/* Custom Delete Account Confirmation Dialog */}
       {showDeleteAccountDialog && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4">
-          <div className="relative w-full max-w-md rounded-lg border border-gray-700 bg-gray-800 p-6 text-white shadow-lg">
-            <h3 className="text-xl font-semibold text-red-400 mb-4">Are you absolutely sure?</h3>
-            <p className="text-gray-300 mb-6">
-              This action cannot be undone. This will permanently delete your account and remove your data from our
-              servers.
-            </p>
-            <div className="flex flex-col sm:flex-row-reverse gap-3">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
+          <div className="relative w-full max-w-lg rounded-2xl border border-gray-600 bg-gray-800 p-8 text-white shadow-2xl">
+            <div className="flex items-center gap-4 mb-6">
+              <div className="p-3 bg-red-500/20 rounded-xl">
+                <AlertTriangle className="w-8 h-8 text-red-400" />
+              </div>
+              <div>
+                <h3 className="text-2xl font-bold text-red-400">Delete Account</h3>
+                <p className="text-gray-300">This action cannot be undone</p>
+              </div>
+            </div>
+
+            <div className="mb-8 p-4 bg-red-900/20 rounded-xl border border-red-500/30">
+              <p className="text-red-300 mb-3 font-medium">
+                This will permanently delete your account and remove all your data from our servers, including:
+              </p>
+              <ul className="text-red-200 text-sm space-y-1 ml-4">
+                <li>• All transaction history</li>
+                <li>• Personal settings and preferences</li>
+                <li>• Account information</li>
+                <li>• All associated data</li>
+              </ul>
+            </div>
+
+            <div className="flex flex-col sm:flex-row-reverse gap-4">
               <button
                 type="button"
-                className="inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 bg-red-600 hover:bg-red-700 text-white h-10 px-4 py-2"
+                className="inline-flex items-center justify-center gap-3 bg-red-600 hover:bg-red-700 text-white font-bold py-4 px-6 rounded-xl transition-all duration-200 shadow-lg"
                 onClick={handleDeleteAccount}
                 disabled={isLoading}
               >
-                Delete My Account
+                <UserX className="w-5 h-5" />
+                {isLoading ? "Deleting..." : "Delete My Account"}
               </button>
               <button
                 type="button"
-                className="inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 border border-input bg-gray-700 text-white hover:bg-gray-600 h-10 px-4 py-2"
+                className="inline-flex items-center justify-center gap-3 border border-gray-600 bg-gray-700 text-white hover:bg-gray-600 font-semibold py-4 px-6 rounded-xl transition-all duration-200"
                 onClick={() => setShowDeleteAccountDialog(false)}
               >
+                <X className="w-5 h-5" />
                 Cancel
               </button>
             </div>
@@ -472,28 +752,43 @@ function Settings({ onNavigate }) {
         </div>
       )}
 
-      {/* Custom Delete All Data Confirmation Dialog (New) */}
+      {/* Custom Delete All Data Confirmation Dialog */}
       {showDeleteDataDialog && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4">
-          <div className="relative w-full max-w-md rounded-lg border border-gray-700 bg-gray-800 p-6 text-white shadow-lg">
-            <h3 className="text-xl font-semibold text-red-400 mb-4">Confirm Data Deletion</h3>
-            <p className="text-gray-300 mb-6">
-              Are you sure you want to delete ALL your previous transaction data? This action cannot be undone.
-            </p>
-            <div className="flex flex-col sm:flex-row-reverse gap-3">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
+          <div className="relative w-full max-w-lg rounded-2xl border border-gray-600 bg-gray-800 p-8 text-white shadow-2xl">
+            <div className="flex items-center gap-4 mb-6">
+              <div className="p-3 bg-red-500/20 rounded-xl">
+                <Trash2 className="w-8 h-8 text-red-400" />
+              </div>
+              <div>
+                <h3 className="text-2xl font-bold text-red-400">Delete All Data</h3>
+                <p className="text-gray-300">This will clear your transaction history</p>
+              </div>
+            </div>
+
+            <div className="mb-8 p-4 bg-red-900/20 rounded-xl border border-red-500/30">
+              <p className="text-red-300 font-medium mb-2">
+                Are you sure you want to delete ALL your previous transaction data?
+              </p>
+              <p className="text-red-200 text-sm">This action cannot be undone, but your account will remain active.</p>
+            </div>
+
+            <div className="flex flex-col sm:flex-row-reverse gap-4">
               <button
                 type="button"
-                className="inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 bg-red-600 hover:bg-red-700 text-white h-10 px-4 py-2"
+                className="inline-flex items-center justify-center gap-3 bg-red-600 hover:bg-red-700 text-white font-bold py-4 px-6 rounded-xl transition-all duration-200 shadow-lg"
                 onClick={confirmDeleteAllData}
                 disabled={isLoading}
               >
-                Delete All Data
+                <Trash2 className="w-5 h-5" />
+                {isLoading ? "Deleting..." : "Delete All Data"}
               </button>
               <button
                 type="button"
-                className="inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 border border-input bg-gray-700 text-white hover:bg-gray-600 h-10 px-4 py-2"
+                className="inline-flex items-center justify-center gap-3 border border-gray-600 bg-gray-700 text-white hover:bg-gray-600 font-semibold py-4 px-6 rounded-xl transition-all duration-200"
                 onClick={() => setShowDeleteDataDialog(false)}
               >
+                <X className="w-5 h-5" />
                 Cancel
               </button>
             </div>
@@ -503,75 +798,120 @@ function Settings({ onNavigate }) {
 
       {/* Password Change Modal */}
       {showPasswordModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4">
-          <div className="relative w-full max-w-md rounded-lg border border-gray-700 bg-gray-800 p-6 text-white shadow-lg">
-            <h3 className="text-xl font-semibold text-white mb-4">Change Password</h3>
-            <div className="space-y-4">
-              <InputField
-                label="Existing Password"
-                type="password"
-                id="currentPasswordModal"
-                placeholder="Enter your current password"
-                value={currentPasswordModal}
-                onChange={(e) => {
-                  setCurrentPasswordModal(e.target.value)
-                  setPasswordModalErrors((prev) => ({ ...prev, currentPassword: "" }))
-                }}
-              />
-              {passwordModalErrors.currentPassword && (
-                <p className="text-red-400 text-sm mt-1">{passwordModalErrors.currentPassword}</p>
-              )}
-
-              <InputField
-                label="New Password"
-                type="password"
-                id="newPasswordModal"
-                placeholder="Enter new password"
-                value={newPasswordModal}
-                onChange={(e) => {
-                  setNewPasswordModal(e.target.value)
-                  setPasswordModalErrors((prev) => ({ ...prev, newPassword: "" }))
-                }}
-              />
-              {passwordModalErrors.newPassword && (
-                <p className="text-red-400 text-sm mt-1">{passwordModalErrors.newPassword}</p>
-              )}
-
-              <InputField
-                label="Retype New Password"
-                type="password"
-                id="retypeNewPasswordModal"
-                placeholder="Retype new password"
-                value={retypeNewPasswordModal}
-                onChange={(e) => {
-                  setRetypeNewPasswordModal(e.target.value)
-                  setPasswordModalErrors((prev) => ({ ...prev, retypeNewPassword: "" }))
-                }}
-              />
-              {passwordModalErrors.retypeNewPassword && (
-                <p className="text-red-400 text-sm mt-1">{passwordModalErrors.retypeNewPassword}</p>
-              )}
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
+          <div className="relative w-full max-w-lg rounded-2xl border border-gray-600 bg-gray-800 p-8 text-white shadow-2xl">
+            <div className="flex items-center gap-4 mb-6">
+              <div className="p-3 bg-[#4ADE80]/20 rounded-xl">
+                <KeyRound className="w-8 h-8 text-[#4ADE80]" />
+              </div>
+              <div>
+                <h3 className="text-2xl font-bold text-white">Change Password</h3>
+                <p className="text-gray-300">Update your account security</p>
+              </div>
             </div>
-            <div className="flex flex-col sm:flex-row-reverse gap-3 mt-6">
+
+            <div className="space-y-6">
+              <div className="relative">
+                <InputField
+                  label="Current Password"
+                  type={showCurrentPassword ? "text" : "password"}
+                  id="currentPasswordModal"
+                  placeholder="Enter your current password"
+                  value={currentPasswordModal}
+                  onChange={(e) => {
+                    setCurrentPasswordModal(e.target.value)
+                    setPasswordModalErrors((prev) => ({ ...prev, currentPassword: "" }))
+                  }}
+                  className="pr-12 h-12"
+                />
+                <button
+                  type="button"
+                  className="absolute right-3 top-9 text-gray-400 hover:text-white transition-colors"
+                  onClick={() => setShowCurrentPassword(!showCurrentPassword)}
+                >
+                  {showCurrentPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                </button>
+                {passwordModalErrors.currentPassword && (
+                  <p className="text-red-400 text-sm mt-2">{passwordModalErrors.currentPassword}</p>
+                )}
+              </div>
+
+              <div className="relative">
+                <InputField
+                  label="New Password"
+                  type={showNewPassword ? "text" : "password"}
+                  id="newPasswordModal"
+                  placeholder="Enter new password"
+                  value={newPasswordModal}
+                  onChange={(e) => {
+                    setNewPasswordModal(e.target.value)
+                    setPasswordModalErrors((prev) => ({ ...prev, newPassword: "" }))
+                  }}
+                  className="pr-12 h-12"
+                />
+                <button
+                  type="button"
+                  className="absolute right-3 top-9 text-gray-400 hover:text-white transition-colors"
+                  onClick={() => setShowNewPassword(!showNewPassword)}
+                >
+                  {showNewPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                </button>
+                {passwordModalErrors.newPassword && (
+                  <p className="text-red-400 text-sm mt-2">{passwordModalErrors.newPassword}</p>
+                )}
+              </div>
+
+              <div className="relative">
+                <InputField
+                  label="Confirm New Password"
+                  type={showRetypePassword ? "text" : "password"}
+                  id="retypeNewPasswordModal"
+                  placeholder="Retype new password"
+                  value={retypeNewPasswordModal}
+                  onChange={(e) => {
+                    setRetypeNewPasswordModal(e.target.value)
+                    setPasswordModalErrors((prev) => ({ ...prev, retypeNewPassword: "" }))
+                  }}
+                  className="pr-12 h-12"
+                />
+                <button
+                  type="button"
+                  className="absolute right-3 top-9 text-gray-400 hover:text-white transition-colors"
+                  onClick={() => setShowRetypePassword(!showRetypePassword)}
+                >
+                  {showRetypePassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                </button>
+                {passwordModalErrors.retypeNewPassword && (
+                  <p className="text-red-400 text-sm mt-2">{passwordModalErrors.retypeNewPassword}</p>
+                )}
+              </div>
+            </div>
+
+            <div className="flex flex-col sm:flex-row-reverse gap-4 mt-8">
               <button
                 type="button"
-                className="inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 bg-[#4ADE80] text-black hover:bg-[#3BC470] h-10 px-4 py-2"
+                className="inline-flex items-center justify-center gap-3 bg-[#4ADE80] text-black hover:bg-[#3BC470] font-bold py-4 px-6 rounded-xl transition-all duration-200 shadow-lg"
                 onClick={handleChangePassword}
                 disabled={isPasswordChanging}
               >
+                <KeyRound className="w-5 h-5" />
                 {isPasswordChanging ? "Changing..." : "Change Password"}
               </button>
               <button
                 type="button"
-                className="inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 border border-input bg-gray-700 text-white hover:bg-gray-600 h-10 px-4 py-2"
+                className="inline-flex items-center justify-center gap-3 border border-gray-600 bg-gray-700 text-white hover:bg-gray-600 font-semibold py-4 px-6 rounded-xl transition-all duration-200"
                 onClick={() => {
                   setShowPasswordModal(false)
                   setCurrentPasswordModal("")
                   setNewPasswordModal("")
                   setRetypeNewPasswordModal("")
                   setPasswordModalErrors({})
+                  setShowCurrentPassword(false)
+                  setShowNewPassword(false)
+                  setShowRetypePassword(false)
                 }}
               >
+                <X className="w-5 h-5" />
                 Cancel
               </button>
             </div>
