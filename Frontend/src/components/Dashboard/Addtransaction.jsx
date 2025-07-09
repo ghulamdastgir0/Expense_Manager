@@ -28,7 +28,7 @@ function AddTransaction({ preSelectedType = "expense" }) {
   // ===== STATE MANAGEMENT =====
   const [formData, setFormData] = useState({
     title: "",
-    type: preSelectedType, 
+    type: preSelectedType,
     amount: "",
     date: "",
     time: "",
@@ -37,6 +37,8 @@ function AddTransaction({ preSelectedType = "expense" }) {
   })
 
   const [errors, setErrors] = useState({})
+  const [budgetLimit, setBudgetLimit] = useState(1000) // Placeholder: User can set this in settings
+  const [baseMonthExpenses, setBaseMonthExpenses] = useState(750) // Placeholder: This would come from actual transactions already recorded
 
   useEffect(() => {
     setFormData((prev) => ({
@@ -45,11 +47,17 @@ function AddTransaction({ preSelectedType = "expense" }) {
     }))
   }, [preSelectedType])
 
+  // Calculate current expenses including the amount being entered
+  const currentExpensesWithNewAmount =
+    baseMonthExpenses +
+    (formData.type === "expense" && !isNaN(Number.parseFloat(formData.amount)) ? Number.parseFloat(formData.amount) : 0)
+  const budgetPercentage = budgetLimit > 0 ? (currentExpensesWithNewAmount / budgetLimit) * 100 : 0
+
   // ===== DATA ARRAYS =====
 
   // Transaction types with icons
   const transactionTypes = [
-    { value: "expense", label: "Expense", icon: TrendingDown, color: "text-red-400" },
+    { value: "expense", label: "Expense", icon: TrendingDown, color: "text-red-500" },
     { value: "income", label: "Income", icon: TrendingUp, color: "text-green-400" },
   ]
 
@@ -83,7 +91,6 @@ function AddTransaction({ preSelectedType = "expense" }) {
       [field]: value,
     }))
 
-   
     if (errors[field]) {
       setErrors((prev) => ({
         ...prev,
@@ -122,9 +129,11 @@ function AddTransaction({ preSelectedType = "expense" }) {
 
     if (validateForm()) {
       console.log("Transaction Data:", formData)
-    
+
       alert(`${formData.type === "income" ? "Income" : "Expense"} transaction added successfully!`)
 
+      // In a real app, you would update baseMonthExpenses here after successful submission
+      // For this example, we'll just reset the form
       setFormData({
         title: "",
         type: preSelectedType,
@@ -140,7 +149,7 @@ function AddTransaction({ preSelectedType = "expense" }) {
   const handleReset = () => {
     setFormData({
       title: "",
-      type: preSelectedType, 
+      type: preSelectedType,
       amount: "",
       date: "",
       time: "",
@@ -193,14 +202,56 @@ function AddTransaction({ preSelectedType = "expense" }) {
                         : "border-gray-600 hover:border-gray-500"
                     }`}
                   >
-                    <type.icon className={`w-5 h-5 ${formData.type === type.value ? "text-[#4ADE80]" : type.color}`} />
-                    <span className={`font-medium ${formData.type === type.value ? "text-[#4ADE80]" : "text-white"}`}>
+                    <type.icon
+                      className={`w-5 h-5 ${formData.type === type.value && type.value === "expense" ? "text-red-500" : formData.type === type.value && type.value === "income" ? "text-[#4ADE80]" : type.color}`}
+                    />
+                    <span
+                      className={`font-medium ${formData.type === type.value && type.value === "expense" ? "text-red-500" : formData.type === type.value && type.value === "income" ? "text-[#4ADE80]" : "text-white"}`}
+                    >
                       {type.label}
                     </span>
                   </button>
                 ))}
               </div>
             </div>
+
+            {/* Budget Limit Usage Bar (only for expenses) */}
+            {formData.type === "expense" && (
+              <Box className="max-w-2xl mx-auto">
+                <div className="space-y-4">
+                  <h3 className="text-lg font-semibold text-white">Budget Usage</h3>
+                  {budgetLimit > 0 ? (
+                    <>
+                      <div className="flex justify-between text-sm">
+                        <span className="text-white">Budget Limit: ${budgetLimit.toFixed(2)}</span>
+                        <span className="text-gray-400">Spent: ${currentExpensesWithNewAmount.toFixed(2)}</span>
+                      </div>
+                      <div className="w-full bg-gray-700 rounded-full h-3">
+                        <div
+                          className={`h-3 rounded-full transition-all duration-500 ${
+                            budgetPercentage > 100
+                              ? "bg-red-500"
+                              : budgetPercentage >= 80
+                                ? "bg-orange-500"
+                                : "bg-[#4ADE80]"
+                          }`}
+                          style={{ width: `${Math.min(100, budgetPercentage)}%` }}
+                        ></div>
+                      </div>
+                      <p className={`text-xs mt-1 ${budgetPercentage > 100 ? "text-red-400" : "text-gray-400"}`}>
+                        {budgetPercentage > 100
+                          ? `Exceeded budget limit by $${(currentExpensesWithNewAmount - budgetLimit).toFixed(2)}`
+                          : budgetPercentage === 100
+                            ? "Reached budget limit"
+                            : `${Math.round(budgetPercentage)}% of budget used`}
+                      </p>
+                    </>
+                  ) : (
+                    <p className="text-gray-400 text-sm">No budget limit added. Set one in Settings to track usage.</p>
+                  )}
+                </div>
+              </Box>
+            )}
 
             {/* Title Field - Using your InputField component */}
             <InputField
@@ -218,6 +269,8 @@ function AddTransaction({ preSelectedType = "expense" }) {
             />
             {errors.title && <p className="text-red-400 text-sm mt-1">{errors.title}</p>}
 
+            
+
             {/* Amount Field - Using your InputField component */}
             <InputField
               label="Amount"
@@ -231,6 +284,8 @@ function AddTransaction({ preSelectedType = "expense" }) {
               required
             />
             {errors.amount && <p className="text-red-400 text-sm mt-1">{errors.amount}</p>}
+
+            
 
             {/* Date Field - Using your InputField component */}
             <InputField

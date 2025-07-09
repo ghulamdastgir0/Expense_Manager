@@ -94,8 +94,8 @@ function TransactionsPage({ onNavigate, onAddTransaction }) {
       textColor: "text-red-400",
     },
     {
-      label: "Net Amount",
-      value: "$2,050",
+      label: "Last Month Remaining Balance", // Changed label
+      value: "$2,050", // Placeholder value
       bg: "bg-blue-900/20",
       textColor: "text-blue-400",
     },

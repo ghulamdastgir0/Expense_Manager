@@ -11,7 +11,6 @@ function EditProfile({ onNavigate }) {
     name: "Chris Flores",
     email: "lucia.rodriguez@example.com",
     phone: "+1 (555) 123-4567",
-    location: "San Francisco, CA",
     avatar: profileimage,
     bio: "Financial enthusiast focused on smart budgeting and investment strategies. Love tracking expenses and optimizing savings.",
   }
@@ -244,17 +243,6 @@ function EditProfile({ onNavigate }) {
               {errors.phone && <p className="text-red-400 text-sm mt-1">{errors.phone}</p>}
             </div>
 
-            {/* Location */}
-            <div>
-              <InputField
-                label="Location"
-                type="text"
-                id="location"
-                placeholder="Enter your location"
-                value={formData.location}
-                onChange={(e) => handleInputChange("location", e.target.value)}
-              />
-            </div>
           </div>
         </Box>
 

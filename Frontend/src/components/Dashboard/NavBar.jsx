@@ -7,7 +7,7 @@ function NavBar({ currentPage, onNavigate }) {
   const [activeItem, setActiveItem] = useState(currentPage || "Dashboard")
   const [isOpen, setIsOpen] = useState(false)
 
-  // User profile data 
+  // User profile data
   const userProfile = {
     name: "Chris Flores",
     email: "lucia.rodriguez@example.com",
@@ -17,7 +17,12 @@ function NavBar({ currentPage, onNavigate }) {
 
   useEffect(() => {
     if (currentPage) {
-      setActiveItem(currentPage)
+      // If on AddTransaction page, highlight Transactions
+      if (currentPage === "AddTransaction") {
+        setActiveItem("Transactions")
+      } else {
+        setActiveItem(currentPage)
+      }
     }
   }, [currentPage])
 
