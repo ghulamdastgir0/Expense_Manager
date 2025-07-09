@@ -4,6 +4,7 @@ import facebook from "../../assets/facebook.svg"
 import eye from "../../assets/eye.svg"
 import RightScreen from "./rightScreen"
 import InputField from "./inputField"
+import {useNavigate} from "react-router-dom";
 
 function signIn() {
   const [email, setEmail] = useState("")
@@ -13,6 +14,13 @@ function signIn() {
   const togglePasswordVisibility = () => {
     setShowPassword(!showPassword)
   }
+
+  const navigate= useNavigate();
+    const handleSubmit = (e) => {
+    e.preventDefault();
+    navigate('/dashboard');
+  };
+
 
   return (
     <section className="bg-[#2D5A4A] min-h-screen h-screen w-full flex items-center justify-center p-4 fixed inset-0">
@@ -25,7 +33,7 @@ function signIn() {
             <p className="text-gray-400 text-sm">If you are already a member, easily log in to your account.</p>
           </div>
 
-          <form className="space-y-6">
+          <form className="space-y-6" onSubmit={handleSubmit}>
             <InputField
               label="Email"
               type="email"

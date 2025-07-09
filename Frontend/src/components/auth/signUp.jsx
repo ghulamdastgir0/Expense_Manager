@@ -3,7 +3,8 @@ import facebook from "../../assets/facebook.svg"
 import eye from "../../assets/eye.svg"
 import RightScreen from "./rightScreen"
 import InputField from "./inputField"
-import { useState } from "react"
+import { use, useState } from "react"
+import {useNavigate} from "react-router-dom"
 
 function SignUp() {
   const [isPasswordVisible, setIsPasswordVisible] = useState(false)
@@ -15,7 +16,11 @@ function SignUp() {
   const togglePasswordVisibility = () => {
     setIsPasswordVisible(!isPasswordVisible)
   }
-
+  const navigate = useNavigate()
+  const handleSubmit = (e) => {
+    e.preventDefault()
+    navigate('/signin')
+  }
   return (
     <div className="flex items-center justify-center min-h-screen bg-[#2D5A4A] p-4">
       <div className="flex w-full max-w-6xl h-[90vh] bg-black rounded-3xl shadow-2xl overflow-hidden">
@@ -27,7 +32,7 @@ function SignUp() {
             <p className="text-gray-400 text-sm">Start managing your expenses smarter with your new account.</p>
           </div>
 
-          <form className="space-y-6">
+          <form className="space-y-6" onSubmit={handleSubmit}>
             <div className="grid grid-cols-2 gap-4">
               <InputField
                 label="First Name"

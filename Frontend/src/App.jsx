@@ -10,15 +10,15 @@ function App() {
 
   return (
     <>
-     {/* <Router>
+     <Router>
       <Routes>
         <Route path='/' element={<LandingPage />} />
         <Route path='/signup' element={<SignUp />} />
         <Route path='/signin' element={<SignIn />} />
-
+        <Route path='/dashboard' element={<Dashboard />} />
+        {/* Add more routes as needed */}
       </Routes>
-      </Router> */}
-      <Dashboard/>
+      </Router>
     </>
   )
 }
