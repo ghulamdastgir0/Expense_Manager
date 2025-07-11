@@ -102,7 +102,12 @@ Then open [http://localhost:5173](http://localhost:5173) to view the frontend.
 
 ## 📸 Screenshots
 
-> _(You can add UI images here for dashboard, login, charts, etc.)_
+<img width="1887" height="866" alt="image" src="https://github.com/user-attachments/assets/bb194e9d-0570-4a84-a9b1-729877dac3a3" />
+<img width="1887" height="884" alt="image" src="https://github.com/user-attachments/assets/309242d7-7491-4fda-9f29-12db9631d39d" />
+<img width="1853" height="859" alt="image" src="https://github.com/user-attachments/assets/07418d68-2bc5-4cba-bed6-b734b8e3e78a" />
+
+
+
 
 ---
 
