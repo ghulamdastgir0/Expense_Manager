@@ -359,6 +359,5 @@ END;
 $$;
 
 
-
 select * from users;
 select * from accountdetail;
