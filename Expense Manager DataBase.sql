@@ -84,18 +84,16 @@ CREATE TABLE transactions (
 
 -- ======================
 -- 9. TRANSACTION DETAILS TABLE
--- ======================
-CREATE TABLE transaction_details (
-    transaction_id INTEGER PRIMARY KEY,
-    title VARCHAR(255),
-    category_id INTEGER,
-    payment_method_id INTEGER,
-    retain_until DATE,
-    FOREIGN KEY (transaction_id) REFERENCES transactions(transaction_id) ON DELETE CASCADE,
-    FOREIGN KEY (category_id) REFERENCES category(category_id),
-    FOREIGN KEY (payment_method_id) REFERENCES paymentmethod(payment_method_id)
-);
 
+-- Create updated transaction_details table with amount column
+CREATE TABLE transaction_details (
+    transaction_id INTEGER REFERENCES transactions(transaction_id) ON DELETE CASCADE,
+    title VARCHAR(255),
+    category_id INTEGER REFERENCES category(category_id),
+    payment_method_id INTEGER REFERENCES paymentmethod(payment_method_id),
+    amount NUMERIC(12,2) NOT NULL,
+    retain_until DATE
+);
 
 
 -- USERS (10 entries)
@@ -197,30 +195,34 @@ INSERT INTO paymentmethod (name) VALUES
 ('Bank Transfer');
 
 -- TRANSACTIONS
-INSERT INTO transactions (transaction_id, user_id, type, transaction_date, transaction_time) VALUES
-(1, 1, 'expense', '2024-07-10', '14:30:00'),
-(2, 1, 'income', '2024-07-11', '11:00:00'),
-(3, 2, 'expense', '2024-07-09', '09:15:00'),
-(4, 3, 'expense', '2024-07-08', '16:45:00'),
-(5, 4, 'income', '2024-07-07', '13:20:00'),
-(6, 5, 'expense', '2024-07-06', '18:00:00'),
-(7, 6, 'expense', '2024-07-05', '12:00:00'),
-(8, 7, 'income', '2024-07-04', '10:00:00'),
-(9, 8, 'expense', '2024-07-03', '19:00:00'),
-(10, 9, 'income', '2024-07-02', '20:00:00');
+INSERT INTO transactions (user_id, type, transaction_date, transaction_time) VALUES
+(1, 'expense', '2024-07-10', '14:30:00'),
+(1, 'income', '2024-07-11', '11:00:00'),
+(2, 'expense', '2024-07-09', '09:15:00'),
+(3, 'expense', '2024-07-08', '16:45:00'),
+(4, 'income', '2024-07-07', '13:20:00'),
+(10, 'expense', '2024-07-06', '18:00:00'),
+(6, 'expense', '2024-07-05', '12:00:00'),
+(7, 'income', '2024-07-04', '10:00:00'),
+(8, 'expense', '2024-07-03', '19:00:00'),
+(9, 'income', '2024-07-02', '20:00:00');
 
 -- TRANSACTION DETAILS
-INSERT INTO transaction_details (transaction_id, title, category_id, payment_method_id, retain_until) VALUES
-(1, 'Lunch at Subway', 1, 1, '2024-08-10'),
-(2, 'Freelance Payment', 7, 2, '2024-12-31'),
-(3, 'Fuel Refill', 2, 3, '2024-08-01'),
-(4, 'Grocery Shopping', 3, 3, '2024-08-15'),
-(5, 'Salary Credited', 7, 4, '2024-12-01'),
-(6, 'Hospital Bill', 4, 2, '2024-08-20'),
-(7, 'Movie Ticket', 8, 1, '2024-08-05'),
-(8, 'Project Payment', 7, 4, '2024-12-31'),
-(9, 'Loan Repayment', 5, 3, '2024-08-10'),
-(10, 'Bonus Received', 7, 2, '2024-11-30');
+INSERT INTO transaction_details (
+    transaction_id, title, category_id, payment_method_id, amount, retain_until
+) VALUES
+(1, 'Grocery Shopping', 1, 1, 450.00, make_date(EXTRACT(YEAR FROM CURRENT_DATE)::INT + 1, 7, 1)),
+(2, 'Bus Fare', 6, 2, 60.00, make_date(EXTRACT(YEAR FROM CURRENT_DATE)::INT + 1, 7, 1)),
+(3, 'Netflix Subscription', 8, 3, 1500.00, make_date(EXTRACT(YEAR FROM CURRENT_DATE)::INT + 1, 7, 1)),
+(4, 'Doctor Appointment', 4, 1, 3000.00, make_date(EXTRACT(YEAR FROM CURRENT_DATE)::INT + 1, 7, 1)),
+(5, 'Fuel Refill', 2, 2, 2300.00, make_date(EXTRACT(YEAR FROM CURRENT_DATE)::INT + 1, 7, 1)),
+(6, 'Electricity Bill', 3, 1, 5500.00, make_date(EXTRACT(YEAR FROM CURRENT_DATE)::INT + 1, 7, 1)),
+(7, 'Online Course', 5, 3, 7000.00, make_date(EXTRACT(YEAR FROM CURRENT_DATE)::INT + 1, 7, 1)),
+(8, 'Gym Membership', 9, 2, 1200.00, make_date(EXTRACT(YEAR FROM CURRENT_DATE)::INT + 1, 7, 1)),
+(9, 'Lunch with Friends', 1, 1, 900.00, make_date(EXTRACT(YEAR FROM CURRENT_DATE)::INT + 1, 7, 1)),
+(10, 'Book Purchase', 7, 3, 1800.00, make_date(EXTRACT(YEAR FROM CURRENT_DATE)::INT + 1, 7, 1));
+
+
 
 --Procedures
 --1
@@ -293,9 +295,70 @@ Begin
 	
 End;
 $$;
+--5
+CREATE OR REPLACE PROCEDURE add_transaction(
+    u_id INT,
+    t_type TEXT,
+    t_date DATE,
+    t_time TIME,
+    t_title TEXT,
+    t_category_id INT,
+    t_payment_method_id INT,
+    amount NUMERIC
+)
+LANGUAGE plpgsql
+AS $$
+DECLARE
+    trans_id INT;
+BEGIN
+    -- Check if user exists
+    IF NOT EXISTS (SELECT 1 FROM users WHERE user_id = u_id) THEN
+        RAISE NOTICE 'Failed Transaction! User not found';
+        RETURN;
+    END IF;
+
+    -- Validate type
+    IF NOT (t_type = 'Expense' OR t_type = 'Income') THEN
+        RAISE NOTICE 'Failed Transaction! Invalid Payment Type';
+        RETURN;
+    END IF;
+
+    -- Insert into transactions and get transaction_id
+    INSERT INTO transactions (user_id, type, transaction_date, transaction_time, retain_until)
+    VALUES (
+        u_id, t_type, t_date, t_time,
+        make_date(EXTRACT(YEAR FROM t_date)::INT + 1, EXTRACT(MONTH FROM t_date)::INT, 1)
+    )
+    RETURNING transaction_id INTO trans_id;
+
+    -- Insert into transaction_details
+    INSERT INTO transaction_details (
+        transaction_id, title, category_id, payment_method_id, amount
+    )
+    VALUES (
+        trans_id, t_title, t_category_id, t_payment_method_id, amount
+    );
+
+    -- Update balance
+    IF t_type = 'Expense' THEN
+        UPDATE balance_detail
+        SET
+            expenses = expenses + amount,
+            balance = balance - amount
+        WHERE user_id = u_id;
+    ELSE
+        UPDATE balance_detail
+        SET
+            income = income + amount,
+            balance = balance + amount
+        WHERE user_id = u_id;
+    END IF;
+
+    RAISE NOTICE 'Transaction added successfully';
+END;
+$$;
+
 
 
 select * from users;
 select * from accountdetail;
-
-
