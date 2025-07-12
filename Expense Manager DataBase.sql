@@ -357,6 +357,15 @@ BEGIN
     RAISE NOTICE 'Transaction added successfully';
 END;
 $$;
+--7
+CREATE OR REPLACE PROCEDURE delete_transaction(t_id INT)
+LANGUAGE plpgsql
+AS $$
+BEGIN
+    DELETE FROM transactions WHERE transaction_id = t_id;
+END;
+$$;
+
 
 
 select * from users;
