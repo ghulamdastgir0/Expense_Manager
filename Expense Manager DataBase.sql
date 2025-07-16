@@ -224,7 +224,7 @@ INSERT INTO transaction_details (
 
 
 
---Procedures
+--Procedures and Functions:
 --1
 CREATE OR REPLACE PROCEDURE create_user(
     fname VARCHAR,
@@ -357,7 +357,7 @@ BEGIN
     RAISE NOTICE 'Transaction added successfully';
 END;
 $$;
---7
+--6
 CREATE OR REPLACE PROCEDURE delete_transaction(t_id INT)
 LANGUAGE plpgsql
 AS $$
@@ -366,6 +366,174 @@ BEGIN
 END;
 $$;
 
+--7
+CREATE OR REPLACE PROCEDURE reset_balance(p_user_id INT)
+LANGUAGE plpgsql
+AS $$
+BEGIN
+    UPDATE balance_detail
+    SET income = 0,
+        expenses = 0,
+        previous_balance = balance,
+        balance = 0
+    WHERE user_id = p_user_id;
+END;
+$$;
+
+--8
+CREATE OR REPLACE PROCEDURE check_budget_alert(p_user_id INT)
+LANGUAGE plpgsql
+AS $$
+DECLARE
+    current_expense NUMERIC;
+    budget NUMERIC;
+BEGIN
+    SELECT expenses INTO current_expense FROM balance_detail WHERE user_id = p_user_id;
+    SELECT budget_limit INTO budget FROM accountdetail WHERE user_id = p_user_id;
+
+    IF current_expense > budget THEN
+        RAISE NOTICE 'Budget Exceeded! Expenses: %, Limit: %', current_expense, budget;
+    ELSE
+        RAISE NOTICE 'Budget is under control.';
+    END IF;
+END;
+$$;
+
+--9
+CREATE OR REPLACE FUNCTION get_monthly_expense_summary(p_user_id INT, p_month TEXT)
+RETURNS TABLE (
+    category TEXT,
+    total_spent NUMERIC
+)
+LANGUAGE plpgsql
+AS $$
+BEGIN
+    RETURN QUERY
+    SELECT c.name, SUM(td.amount)
+    FROM transactions t
+    JOIN transaction_details td ON t.transaction_id = td.transaction_id
+    JOIN category c ON td.category_id = c.category_id
+    WHERE t.user_id = p_user_id
+      AND t.type = 'expense'
+      AND TO_CHAR(t.transaction_date, 'YYYY-MM') = p_month
+    GROUP BY c.name
+    ORDER BY total_spent DESC;
+END;
+$$;
+
+--11
+CREATE OR REPLACE FUNCTION get_daily_spending(p_user_id INT, p_date DATE)
+RETURNS TABLE (
+    type TEXT,
+    total NUMERIC
+)
+LANGUAGE plpgsql
+AS $$
+BEGIN
+    RETURN QUERY
+    SELECT t.type, SUM(td.amount)
+    FROM transactions t
+    JOIN transaction_details td ON t.transaction_id = td.transaction_id
+    WHERE t.user_id = p_user_id AND t.transaction_date = p_date
+    GROUP BY t.type;
+END;
+$$;
+
+--12
+CREATE OR REPLACE FUNCTION get_top_categories(p_user_id INT, p_limit INT)
+RETURNS TABLE (
+    category TEXT,
+    total_spent NUMERIC
+)
+LANGUAGE plpgsql
+AS $$
+BEGIN
+    RETURN QUERY
+    SELECT c.name, SUM(td.amount)
+    FROM transactions t
+    JOIN transaction_details td ON t.transaction_id = td.transaction_id
+    JOIN category c ON td.category_id = c.category_id
+    WHERE t.user_id = p_user_id AND t.type = 'expense'
+    GROUP BY c.name
+    ORDER BY total_spent DESC
+    LIMIT p_limit;
+END;
+$$;
+
+--13
+CREATE OR REPLACE FUNCTION get_transaction_history(
+    p_user_id INT,
+    p_from_date DATE,
+    p_to_date DATE
+)
+RETURNS TABLE (
+    transaction_id INT,
+    transaction_date DATE,
+    transaction_time TIME,
+    type TEXT,
+    title TEXT,
+    amount NUMERIC,
+    category TEXT,
+    payment_method TEXT
+)
+LANGUAGE plpgsql
+AS $$
+BEGIN
+    RETURN QUERY
+    SELECT t.transaction_id, t.transaction_date, t.transaction_time, t.type,
+           td.title, td.amount, c.name, pm.name
+    FROM transactions t
+    JOIN transaction_details td ON t.transaction_id = td.transaction_id
+    JOIN category c ON td.category_id = c.category_id
+    JOIN paymentmethod pm ON td.payment_method_id = pm.payment_method_id
+    WHERE t.user_id = p_user_id
+      AND t.transaction_date BETWEEN p_from_date AND p_to_date
+    ORDER BY t.transaction_date DESC, t.transaction_time DESC;
+END;
+$$;
+
+--14
+CREATE OR REPLACE PROCEDURE cleanup_old_transactions(p_user_id INT)
+LANGUAGE plpgsql
+AS $$
+BEGIN
+    DELETE FROM transaction_details
+    WHERE transaction_id IN (
+        SELECT t.transaction_id FROM transactions t WHERE t.user_id = p_user_id
+    )
+    AND retain_until < CURRENT_DATE;
+
+    DELETE FROM transactions
+    WHERE user_id = p_user_id
+      AND transaction_id NOT IN (
+          SELECT transaction_id FROM transaction_details
+      );
+END;
+$$;
+
+--15
+CREATE OR REPLACE FUNCTION login_user(
+    in_email VARCHAR,
+    in_password VARCHAR
+)
+RETURNS TABLE (
+    user_id INT,
+    first_name VARCHAR,
+    last_name VARCHAR,
+    email VARCHAR,
+    image_url TEXT,
+    join_date DATE
+)
+LANGUAGE plpgsql
+AS $$
+BEGIN
+    RETURN QUERY
+    SELECT 
+        u.user_id, u.first_name, u.last_name, u.email, u.image_url, u.join_date
+    FROM users u
+    WHERE u.email = in_email AND u.password = in_password;
+END;
+$$;
 
 
 select * from users;
