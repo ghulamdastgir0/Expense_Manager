@@ -3,6 +3,8 @@ import pool from './config/db.js';
 
 // Import user routes
 import userRoutes from './routes/userRoutes.js';
+// Import transaction routes
+import transactionRoutes from './routes/transactionRoutes.js';
 
 const app = express();
 const port = 3000;
@@ -27,6 +29,7 @@ app.get('/users', async (req, res) => {
 
 // API routes
 app.use('/api/user', userRoutes); 
+app.use('/api/transactions', transactionRoutes);
 
 // Start server
 app.listen(port, () => {
