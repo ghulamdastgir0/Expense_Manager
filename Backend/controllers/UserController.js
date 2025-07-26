@@ -1,6 +1,8 @@
 // Simplified Account Controller using PostgreSQL Procedures
 import db from "../config/db.js";
 import bcrypt from "bcrypt";
+import jwt from "jsonwebtoken"
+
 
 // 1. GET user account details
 export const getAccountDetails = async (req, res) => {
@@ -128,5 +130,25 @@ export const getDashboardStats = async (req, res) => {
     res.json({ income, expenses, balance, previous_balance, topExpenses });
   } catch (err) {
     res.status(500).json({ error: "Error fetching dashboard stats" });
+  }
+};
+
+export const getUserProfile = async (req, res) => {
+  try {
+    const userId = req.user.user_id
+    const result = await db.query(`SELECT * FROM get_user_profile($1)`, [userId])
+    res.json(result.rows[0])
+  } catch (err) {
+    console.error("Error fetching profile:", err)
+    res.status(500).json({ error: "Internal server error" })
+  }
+};
+
+export const logoutUser = async (req, res) => {
+  try {
+    // If using token blacklist, store token here
+    res.status(200).json({ message: "Logged out successfully" })
+  } catch (err) {
+    res.status(500).json({ error: "Logout failed" })
   }
 };

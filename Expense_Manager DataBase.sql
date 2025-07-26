@@ -567,6 +567,40 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
+
+CREATE OR REPLACE FUNCTION get_user_profile(p_user_id INT)
+RETURNS TABLE (
+    name VARCHAR,
+    email VARCHAR,
+    phone VARCHAR,
+    join_date DATE,
+    image_url TEXT,
+    currency VARCHAR,
+    timezone VARCHAR,
+    budget_limit NUMERIC,
+    is_email_verified BOOLEAN,
+    is_phone_verified BOOLEAN
+) AS $$
+BEGIN
+    RETURN QUERY
+    SELECT 
+        u.first_name || ' ' || u.last_name,
+        u.email,
+        a.phone,
+        u.join_date,
+        u.image_url,
+        a.currency_id,
+        a.timezone,
+        a.budget_limit,
+        u.email IS NOT NULL,
+        a.phone IS NOT NULL
+    FROM users u
+    JOIN accountdetail a ON u.user_id = a.user_id
+    WHERE u.user_id = p_user_id;
+END;
+$$ LANGUAGE plpgsql;
+
+
 -- 2. Get balance details
 CREATE OR REPLACE FUNCTION get_balance_details(p_user_id INT)
 RETURNS TABLE (
