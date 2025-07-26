@@ -1,6 +1,8 @@
 import express from 'express';
 import loginUserRoute from './routes/signInUserRoute.js';
 import signUpUserRoute from './routes/signUpUserRoute.js';
+import historyRoute from './routes/historyRoute.js';
+import dashboardRoute from './routes/dashboardRoute.js';
 
 const app = express();
 const port= 3000;
@@ -8,7 +10,8 @@ app.use(express.json());
 
 app.use('/', loginUserRoute);
 app.use('/', signUpUserRoute);
-
+app.use('/',historyRoute)
+app.use('/', dashboardRoute);
 app.get('/', (req, res) => {
     res.send('Welcome to the Expense Manager API');
 });
