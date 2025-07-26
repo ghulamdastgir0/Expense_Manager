@@ -13,8 +13,8 @@ import {
   loginUser,
   signUpUser,
   getUserProfile,
-   logoutUser
-} from "../controllers/accountController.js";
+  logoutUser
+} from "../controllers/UserController.js";
 
 const router = express.Router();
 
@@ -26,7 +26,7 @@ router.delete("/delete/:userId", verifyToken, deleteUser);
 router.get("/preferences/:userId", verifyToken, getPreferences);
 router.patch("/password/:userId", verifyToken, updatePassword);
 router.delete("/clean-data/:userId", verifyToken, deleteAllUserData);
-router.get("/dashboard/:userId", verifyToken, getDashboard);
+router.get("/dashboard", verifyToken, getDashboard);
 router.post("/login", loginUser);
 router.post("/signup", signUpUser);
 router.get("/profile", verifyToken, getUserProfile);
