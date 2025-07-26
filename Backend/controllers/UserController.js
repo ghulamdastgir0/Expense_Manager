@@ -216,3 +216,23 @@ export const signUpUser = async (req, res) => {
         client.release();
     }
 };
+
+export const getUserProfile = async (req, res) => {
+  try {
+    const userId = req.user.user_id
+    const result = await db.query(`SELECT * FROM get_user_profile($1)`, [userId])
+    res.json(result.rows[0])
+  } catch (err) {
+    console.error("Error fetching profile:", err)
+    res.status(500).json({ error: "Internal server error" })
+  }
+};
+
+export const logoutUser = async (req, res) => {
+  try {
+    // If using token blacklist, store token here
+    res.status(200).json({ message: "Logged out successfully" })
+  } catch (err) {
+    res.status(500).json({ error: "Logout failed" })
+  }
+};

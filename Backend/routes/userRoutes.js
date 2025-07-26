@@ -11,8 +11,9 @@ import {
   deleteAllUserData,
   getDashboard,
   loginUser,
-  signUpUser
-  
+  signUpUser,
+  getUserProfile,
+   logoutUser
 } from "../controllers/accountController.js";
 
 const router = express.Router();
@@ -28,5 +29,8 @@ router.delete("/clean-data/:userId", verifyToken, deleteAllUserData);
 router.get("/dashboard/:userId", verifyToken, getDashboard);
 router.post("/login", loginUser);
 router.post("/signup", signUpUser);
+router.get("/profile", verifyToken, getUserProfile);
+router.post("/logout", verifyToken, logoutUser);
+
 
 export default router;
