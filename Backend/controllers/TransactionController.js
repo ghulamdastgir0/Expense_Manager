@@ -1,0 +1,66 @@
+import pool from "../config/db.js";
+
+// 1. Add a new transaction
+export const addTransaction = async (req, res) => {
+  const { user_id, title, type, amount, date, time, category, mode } = req.body;
+  try {
+    const result = await pool.query(`SELECT add_transaction($1, $2, $3, $4, $5, $6, $7, $8) AS transaction_id`, 
+      [user_id, title, type, amount, date, time, category, mode]);
+    res.status(201).json({ message: "Transaction added", transaction_id: result.rows[0].transaction_id });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};
+
+// 2. Get all transactions by user
+export const getTransactionsByUser = async (req, res) => {
+  const { userId } = req.params;
+  try {
+    const result = await pool.query(`SELECT * FROM get_transactions_by_user($1)`, [userId]);
+    res.json(result.rows);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};
+
+// 3. Delete a transaction
+export const deleteTransaction = async (req, res) => {
+  const { id } = req.params;
+  try {
+    await pool.query(`CALL delete_transaction($1)`, [id]);
+    res.json({ message: "Transaction deleted" });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};
+
+// 4. Cleanup old transactions
+export const cleanupOldTransactions = async (req, res) => {
+  const { userId } = req.params;
+  try {
+    const result = await pool.query(`SELECT cleanup_old_transactions($1) AS deleted_count`, [userId]);
+    res.json({ message: `Deleted ${result.rows[0].deleted_count} old transactions.` });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};
+
+// 5. Get all categories
+export const getAllCategories = async (req, res) => {
+  try {
+    const result = await pool.query(`SELECT * FROM get_all_categories()`);
+    res.json(result.rows);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};
+
+// 6. Get all payment methods
+export const getAllPaymentMethods = async (req, res) => {
+  try {
+    const result = await pool.query(`SELECT * FROM get_all_payment_methods()`);
+    res.json(result.rows);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};
