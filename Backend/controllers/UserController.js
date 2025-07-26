@@ -1,171 +1,131 @@
-import db from "../config/db.js"; 
+// Simplified Account Controller using PostgreSQL Procedures
+import db from "../config/db.js";
 import bcrypt from "bcrypt";
 
-// GET user account details
+// 1. GET user account details
 export const getAccountDetails = async (req, res) => {
   const { userId } = req.params;
   try {
-    const userResult = await db.query(
-      "SELECT u.user_id, u.first_name, u.last_name, u.email, u.image_url, u.join_date, a.currency_id, a.time_zone_id, a.budget_limit, c.symbol, t.utc_offset FROM users u LEFT JOIN accountdetail a ON u.user_id = a.user_id LEFT JOIN currency c ON a.currency_id = c.currency_id LEFT JOIN timezone t ON a.time_zone_id = t.time_zone_id WHERE u.user_id = $1",
-      [userId]
-    );
-    res.json(userResult.rows[0]);
+    const result = await db.query("SELECT * FROM get_account_details($1)", [userId]);
+    res.json(result.rows[0]);
   } catch (err) {
     res.status(500).json({ error: "Error fetching account details" });
   }
 };
 
-// GET user balance
+// 2. GET user balance
 export const getBalanceDetails = async (req, res) => {
   const { userId } = req.params;
   try {
-    const result = await db.query(
-      "SELECT income, expenses, balance, previous_balance FROM balance_detail WHERE user_id = $1",
-      [userId]
-    );
+    const result = await db.query("SELECT * FROM get_balance_details($1)", [userId]);
     res.json(result.rows[0]);
   } catch (err) {
     res.status(500).json({ error: "Error fetching balance" });
   }
 };
 
-// PATCH user profile
+// 3. PATCH user profile
 export const updateUserProfile = async (req, res) => {
   const { userId } = req.params;
   const { first_name, last_name, email, image_url } = req.body;
   try {
-    await db.query(
-      "UPDATE users SET first_name = $1, last_name = $2, email = $3, image_url = $4 WHERE user_id = $5",
-      [first_name, last_name, email, image_url, userId]
-    );
+    await db.query("CALL update_user_profile($1, $2, $3, $4, $5)", [
+      userId,
+      first_name,
+      last_name,
+      email,
+      image_url,
+    ]);
     res.json({ message: "Profile updated successfully" });
   } catch (err) {
     res.status(500).json({ error: "Error updating profile" });
   }
 };
 
-// PATCH account settings
+// 4. PATCH account settings
 export const updateAccountSettings = async (req, res) => {
   const { userId } = req.params;
   const { currency_id, time_zone_id, budget_limit } = req.body;
   try {
-    await db.query(
-      `INSERT INTO accountdetail (user_id, currency_id, time_zone_id, budget_limit)
-       VALUES ($1, $2, $3, $4)
-       ON CONFLICT (user_id)
-       DO UPDATE SET currency_id = EXCLUDED.currency_id,
-                     time_zone_id = EXCLUDED.time_zone_id,
-                     budget_limit = EXCLUDED.budget_limit`,
-      [userId, currency_id, time_zone_id, budget_limit]
-    );
+    await db.query("CALL update_account_settings($1, $2, $3, $4)", [
+      userId,
+      currency_id,
+      time_zone_id,
+      budget_limit,
+    ]);
     res.json({ message: "Account settings updated successfully" });
   } catch (err) {
     res.status(500).json({ error: "Error updating account settings" });
   }
 };
 
-// DELETE user
+// 5. DELETE user
 export const deleteUser = async (req, res) => {
   const { userId } = req.params;
   try {
-    await db.query("DELETE FROM users WHERE user_id = $1", [userId]);
+    await db.query("CALL delete_user($1)", [userId]);
     res.json({ message: "User deleted successfully" });
   } catch (err) {
     res.status(500).json({ error: "Error deleting user" });
   }
 };
 
-
-// GET preferences (currency, timezone, budget)
+// 6. GET preferences
 export const getPreferences = async (req, res) => {
   const { userId } = req.params;
   try {
-    const result = await db.query(
-      `SELECT currency_id, time_zone_id, budget_limit
-       FROM accountdetail WHERE user_id = $1`,
-      [userId]
-    );
+    const result = await db.query("SELECT * FROM get_preferences($1)", [userId]);
     res.json(result.rows[0]);
   } catch (err) {
     res.status(500).json({ error: "Error fetching preferences" });
   }
 };
 
-// PATCH password
+// 7. PATCH password
 export const updatePassword = async (req, res) => {
-  
   const { userId } = req.params;
   const { currentPassword, newPassword } = req.body;
-
   try {
-    
-    const result = await db.query(
-      "SELECT password FROM users WHERE user_id = $1",
-      [userId]
-    );
+    const result = await db.query("SELECT password FROM users WHERE user_id = $1", [userId]);
+    if (result.rows.length === 0) return res.status(404).json({ error: "User not found" });
 
-    if (result.rows.length === 0) {
-      return res.status(404).json({ error: "User not found" });
-    }
+    const storedHash = result.rows[0].password;
+    const isMatch = await bcrypt.compare(currentPassword, storedHash);
+    if (!isMatch) return res.status(401).json({ error: "Current password is incorrect" });
 
-    const storedPassword = result.rows[0].password;
-
-    if (storedPassword !== currentPassword) {
-      return res.status(401).json({ error: "Current password is incorrect" });
-    }
-
-    await db.query(
-      "UPDATE users SET password = $1 WHERE user_id = $2",
-      [newPassword, userId]
-    );
-
+    const newHash = await bcrypt.hash(newPassword, 10);
+    await db.query("CALL update_password($1, $2)", [userId, newHash]);
     res.json({ message: "Password updated successfully" });
-
   } catch (err) {
-    console.error("Password update error:", err);
     res.status(500).json({ error: "Internal server error" });
   }
-
 };
 
-// DELETE all data except user
+// 8. DELETE all data except user
 export const deleteAllUserData = async (req, res) => {
   const { userId } = req.params;
   try {
-    await db.query("DELETE FROM transaction_details WHERE transaction_id IN (SELECT transaction_id FROM transactions WHERE user_id = $1)", [userId]);
-    await db.query("DELETE FROM transactions WHERE user_id = $1", [userId]);
-    await db.query("DELETE FROM balance_detail WHERE user_id = $1", [userId]);
+    await db.query("CALL delete_all_user_data($1)", [userId]);
     res.json({ message: "All user data deleted successfully" });
   } catch (err) {
     res.status(500).json({ error: "Failed to delete user data" });
   }
 };
 
-// GET dashboard summary (balance, income, expense, top 5 categories)
+// 9. GET dashboard stats
 export const getDashboardStats = async (req, res) => {
   const { userId } = req.params;
   try {
-    const [balanceData] = await Promise.all([
-      db.query(
-        "SELECT income, expenses, balance, previous_balance FROM balance_detail WHERE user_id = $1",
-        [userId]
-      ),
-    ]);
+    const result = await db.query("SELECT * FROM get_dashboard_stats($1)", [userId]);
 
-    const topCategories = await db.query(
-      `SELECT cat.name AS category, SUM(td.amount) AS expense
-       FROM transaction_details td
-       JOIN transactions t ON td.transaction_id = t.transaction_id
-       JOIN category cat ON td.category_id = cat.category_id
-       WHERE t.user_id = $1 AND t.type = 'expense'
-       GROUP BY cat.name ORDER BY expense DESC LIMIT 5`,
-      [userId]
-    );
+    if (result.rows.length === 0) {
+      return res.json({ income: 0, expenses: 0, balance: 0, previous_balance: 0, topExpenses: [] });
+    }
 
-    res.json({
-      ...balanceData.rows[0],
-      topExpenses: topCategories.rows,
-    });
+    const { income, expenses, balance, previous_balance } = result.rows[0];
+    const topExpenses = result.rows.map(row => ({ category: row.category, expense: row.expense }));
+
+    res.json({ income, expenses, balance, previous_balance, topExpenses });
   } catch (err) {
     res.status(500).json({ error: "Error fetching dashboard stats" });
   }

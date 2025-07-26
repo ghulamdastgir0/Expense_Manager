@@ -1,21 +1,21 @@
-import express from "express"
+import express from "express";
+import verifyToken from "../middleware/verifyToken.js";
 import {
   addTransaction,
-  getTransactionsByUser,
+  getUserTransactions,
   deleteTransaction,
-  cleanupOldTransactions,
   getAllCategories,
-  getAllPaymentMethods
-} from "../controllers/TransactionController.js"
+  getAllPaymentMethods,
+  cleanupOldTransactions
+} from "../controllers/TransactionController.js";
 
-const router = express.Router()
+const router = express.Router();
 
-router.post("/transactions", addTransaction)
-router.get("/transactions/user/:userId", getTransactionsByUser)
-router.delete("/transactions/:id", deleteTransaction)
-router.post("/transactions/cleanup/:userId", cleanupOldTransactions)
+router.post("/add", verifyToken, addTransaction);
+router.get("/all/:userId", verifyToken, getUserTransactions);
+router.delete("/delete/:transactionId", verifyToken, deleteTransaction);
+router.get("/categories", verifyToken, getAllCategories);
+router.get("/payment-methods", verifyToken, getAllPaymentMethods);
+router.delete("/cleanup/:userId", verifyToken, cleanupOldTransactions);
 
-router.get("/categories", getAllCategories)
-router.get("/paymentmethods", getAllPaymentMethods)
-
-export default router
+export default router;

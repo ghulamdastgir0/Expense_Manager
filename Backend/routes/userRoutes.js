@@ -1,18 +1,27 @@
 import express from "express";
-import * as UserController from "../controllers/UserController.js";
+import verifyToken from "../middleware/verifyToken.js";
+import {
+  getAccountDetails,
+  getBalanceDetails,
+  updateUserProfile,
+  updateAccountSettings,
+  deleteUser,
+  getPreferences,
+  updatePassword,
+  deleteAllUserData,
+  getDashboardStats
+} from "../controllers/accountController.js";
 
 const router = express.Router();
 
-router.get("/account/:userId", UserController.getAccountDetails);
-router.get("/balance/:userId", UserController.getBalanceDetails);
-router.get("/preferences/:userId", UserController.getPreferences);
-router.get("/dashboard/:userId", UserController.getDashboardStats);
-
-router.patch("/edit/:userId", UserController.updateUserProfile);
-router.patch("/account/:userId", UserController.updateAccountSettings);
-router.patch("/password/:userId", UserController.updatePassword);
-
-router.delete("/delete/:userId", UserController.deleteUser);
-router.delete("/data/:userId", UserController.deleteAllUserData);
+router.get("/details/:userId", verifyToken, getAccountDetails);
+router.get("/balance/:userId", verifyToken, getBalanceDetails);
+router.patch("/profile/:userId", verifyToken, updateUserProfile);
+router.patch("/settings/:userId", verifyToken, updateAccountSettings);
+router.delete("/delete/:userId", verifyToken, deleteUser);
+router.get("/preferences/:userId", verifyToken, getPreferences);
+router.patch("/password/:userId", verifyToken, updatePassword);
+router.delete("/clean-data/:userId", verifyToken, deleteAllUserData);
+router.get("/dashboard/:userId", verifyToken, getDashboardStats);
 
 export default router;
