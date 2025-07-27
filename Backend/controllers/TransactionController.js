@@ -32,18 +32,6 @@ export const addTransaction = async (req, res) => {
   }
 };
 
-
-// 2. Get all transactions by user
-export const getTransactionsByUser = async (req, res) => {
-  const { userId } = req.params;
-  try {
-    const result = await pool.query(`SELECT * FROM get_transactions_by_user($1)`, [userId]);
-    res.json(result.rows);
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-};
-
 // 3. Delete a transaction
 export const deleteTransaction = async (req, res) => {
   const id = req.query.id;
