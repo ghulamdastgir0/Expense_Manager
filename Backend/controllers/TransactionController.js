@@ -46,7 +46,10 @@ export const getTransactionsByUser = async (req, res) => {
 
 // 3. Delete a transaction
 export const deleteTransaction = async (req, res) => {
-  const { id } = req.params;
+  const id = req.query.id;
+  if (!id) {
+    return res.status(400).json({ message: "Transaction ID is required" });
+  }
   try {
     await pool.query(`CALL delete_transaction($1)`, [id]);
     res.json({ message: "Transaction deleted" });
@@ -69,7 +72,7 @@ export const cleanupOldTransactions = async (req, res) => {
 // 5. Get all categories
 export const getAllCategories = async (req, res) => {
   try {
-    const result = await pool.query(`SELECT * FROM get_all_categories()`);
+    const result = await pool.query(`SELECT * FROM category`);
     res.json(result.rows);
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -79,7 +82,8 @@ export const getAllCategories = async (req, res) => {
 // 6. Get all payment methods
 export const getAllPaymentMethods = async (req, res) => {
   try {
-    const result = await pool.query(`SELECT * FROM get_all_payment_methods()`);
+    const result = await pool.query(`SELECT * FROM paymentmethod`);
+    console.log("Payment methods fetched:", result.rows);
     res.json(result.rows);
   } catch (err) {
     res.status(500).json({ error: err.message });
