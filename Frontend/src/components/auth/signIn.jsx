@@ -9,9 +9,32 @@ function signIn() {
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
   const [showPassword, setShowPassword] = useState(false)
+  const [error, setError] = useState("")
 
   const togglePasswordVisibility = () => {
     setShowPassword(!showPassword)
+  }
+
+  const handleSubmit = async (e) => {
+    e.preventDefault()
+    setError("")
+    console.log(email, password)
+    const userData = await fetch("/users/login", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ email, password }),
+    })
+    const data = await userData.json()
+    console.log(data)
+    if (userData.ok) {
+      localStorage.setItem("token", data.token)
+      localStorage.setItem("user", JSON.stringify(data.user))
+      window.location.href = "/dashboard"
+    } else {
+      setError(data.message || "Login failed")
+    }
   }
 
   return (
@@ -24,7 +47,6 @@ function signIn() {
             <h1 className="text-3xl font-bold mb-2">Welcome Back</h1>
             <p className="text-gray-400 text-sm">If you are already a member, easily log in to your account.</p>
           </div>
-
           <form className="space-y-6">
             <InputField
               label="Email"
@@ -35,7 +57,6 @@ function signIn() {
               onChange={(e) => setEmail(e.target.value)}
               required
             />
-
             <InputField
               label="Password"
               id="password"
@@ -48,15 +69,15 @@ function signIn() {
               onTogglePassword={togglePasswordVisibility}
               eyeIcon={eye}
             />
-
             <button
-              type="submit"
+              type="button"
               className="w-full bg-[#4ADE80] text-black font-semibold py-3 rounded-lg hover:bg-[#3BC470] transition-colors duration-200"
+              onClick={handleSubmit}
             >
               Sign In
             </button>
+            {error && <p className="text-red-500 text-sm text-center mt-2">{error}</p>}
           </form>
-
           {/* Social Login */}
           <div className="flex justify-center space-x-4 mt-8">
             <button className="w-12 h-12 bg-white rounded-full flex items-center justify-center hover:bg-gray-100 transition-colors">
@@ -66,7 +87,6 @@ function signIn() {
               <img src={facebook || "/placeholder.svg"} alt="Facebook" className="w-8 h-8" />
             </button>
           </div>
-
           <p className="text-center text-gray-400 text-sm mt-8">
             Don't have an account?{" "}
             <a href="/signup" className="text-[#4ADE80] hover:underline">
@@ -74,7 +94,6 @@ function signIn() {
             </a>
           </p>
         </div>
-
         {/* Right Side Panel */}
         <RightScreen />
       </div>
