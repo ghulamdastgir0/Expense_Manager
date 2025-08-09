@@ -7,9 +7,9 @@ dotenv.config();
 
 // 1. GET user account details
 export const getAccountDetails = async (req, res) => {
-  const { userId } = req.params;
+  const userId = req.user.id;
   try {
-    const result = await db.query("SELECT * FROM get_account_details($1)", [userId]);
+    const result = await pool.query("SELECT * FROM accountdetail where user_id = $1", [userId]);
     res.json(result.rows[0]);
   } catch (err) {
     res.status(500).json({ error: "Error fetching account details" });
@@ -18,9 +18,10 @@ export const getAccountDetails = async (req, res) => {
 
 // 2. GET user balance
 export const getBalanceDetails = async (req, res) => {
-  const { userId } = req.params;
+  const userId = req.user.id;
   try {
-    const result = await db.query("SELECT * FROM get_balance_details($1)", [userId]);
+    const result = await pool.query("SELECT * FROM balance_detail where user_id = $1", [userId]);
+    console.log(result.rows[0]);
     res.json(result.rows[0]);
   } catch (err) {
     res.status(500).json({ error: "Error fetching balance" });
@@ -28,29 +29,44 @@ export const getBalanceDetails = async (req, res) => {
 };
 
 // 3. PATCH user profile
+
 export const updateUserProfile = async (req, res) => {
-  const { userId } = req.params;
+  const userId = req.user.id;
   const { first_name, last_name, email, image_url } = req.body;
+
   try {
-    await db.query("CALL update_user_profile($1, $2, $3, $4, $5)", [
+    // Update in database
+    await pool.query("CALL update_user_profile($1, $2, $3, $4, $5)", [
       userId,
       first_name,
       last_name,
       email,
       image_url,
     ]);
-    res.json({ message: "Profile updated successfully" });
+
+    // Generate new JWT with updated email
+    const newToken = jwt.sign(
+      { id: userId, email }, // updated email
+      process.env.JWT_SECRET,
+      { expiresIn: "1d" }
+    );
+
+    res.json({
+      message: "Profile updated successfully",
+      token: newToken, // return new token
+    });
   } catch (err) {
+    console.error("Update error:", err.message);
     res.status(500).json({ error: "Error updating profile" });
   }
 };
 
 // 4. PATCH account settings
 export const updateAccountSettings = async (req, res) => {
-  const { userId } = req.params;
+  const userId = req.user.id;
   const { currency_id, time_zone_id, budget_limit } = req.body;
   try {
-    await db.query("CALL update_account_settings($1, $2, $3, $4)", [
+    await pool.query("CALL update_account_settings($1, $2, $3, $4)", [
       userId,
       currency_id,
       time_zone_id,
@@ -64,9 +80,9 @@ export const updateAccountSettings = async (req, res) => {
 
 // 5. DELETE user
 export const deleteUser = async (req, res) => {
-  const { userId } = req.params;
+  const { userId } = req.user.userId;
   try {
-    await db.query("CALL delete_user($1)", [userId]);
+    await pool.query("CALL delete_user($1)", [userId]);
     res.json({ message: "User deleted successfully" });
   } catch (err) {
     res.status(500).json({ error: "Error deleting user" });
@@ -75,9 +91,9 @@ export const deleteUser = async (req, res) => {
 
 // 6. GET preferences
 export const getPreferences = async (req, res) => {
-  const { userId } = req.params;
+  const { userId } = req.user.userId;
   try {
-    const result = await db.query("SELECT * FROM get_preferences($1)", [userId]);
+    const result = await pool.query("SELECT * FROM get_preferences($1)", [userId]);
     res.json(result.rows[0]);
   } catch (err) {
     res.status(500).json({ error: "Error fetching preferences" });
@@ -86,10 +102,10 @@ export const getPreferences = async (req, res) => {
 
 // 7. PATCH password
 export const updatePassword = async (req, res) => {
-  const { userId } = req.params;
+  const { userId } = req.user.userId;
   const { currentPassword, newPassword } = req.body;
   try {
-    const result = await db.query("SELECT password FROM users WHERE user_id = $1", [userId]);
+    const result = await pool.query("SELECT password FROM users WHERE user_id = $1", [userId]);
     if (result.rows.length === 0) return res.status(404).json({ error: "User not found" });
 
     const storedHash = result.rows[0].password;
@@ -97,7 +113,7 @@ export const updatePassword = async (req, res) => {
     if (!isMatch) return res.status(401).json({ error: "Current password is incorrect" });
 
     const newHash = await bcrypt.hash(newPassword, 10);
-    await db.query("CALL update_password($1, $2)", [userId, newHash]);
+    await pool.query("CALL update_password($1, $2)", [userId, newHash]);
     res.json({ message: "Password updated successfully" });
   } catch (err) {
     res.status(500).json({ error: "Internal server error" });
@@ -106,9 +122,9 @@ export const updatePassword = async (req, res) => {
 
 // 8. DELETE all data except user
 export const deleteAllUserData = async (req, res) => {
-  const { userId } = req.params;
+  const { userId } = req.user.userId;
   try {
-    await db.query("CALL delete_all_user_data($1)", [userId]);
+    await pool.query("CALL delete_all_user_data($1)", [userId]);
     res.json({ message: "All user data deleted successfully" });
   } catch (err) {
     res.status(500).json({ error: "Failed to delete user data" });
@@ -219,8 +235,9 @@ export const signUpUser = async (req, res) => {
 
 export const getUserProfile = async (req, res) => {
   try {
-    const userId = req.user.user_id
-    const result = await db.query(`SELECT * FROM get_user_profile($1)`, [userId])
+    const userId = req.user.id
+    console.log("Fetching profile for user ID:", userId)
+    const result = await pool.query(`SELECT * FROM get_user_profile($1)`, [userId])
     res.json(result.rows[0])
   } catch (err) {
     console.error("Error fetching profile:", err)

@@ -18,14 +18,14 @@ import {
 
 const router = express.Router();
 
-router.get("/details/:userId", verifyToken, getAccountDetails);
-router.get("/balance/:userId", verifyToken, getBalanceDetails);
-router.patch("/profile/:userId", verifyToken, updateUserProfile);
-router.patch("/settings/:userId", verifyToken, updateAccountSettings);
-router.delete("/delete/:userId", verifyToken, deleteUser);
-router.get("/preferences/:userId", verifyToken, getPreferences);
-router.patch("/password/:userId", verifyToken, updatePassword);
-router.delete("/clean-data/:userId", verifyToken, deleteAllUserData);
+router.get("/account-details", verifyToken, getAccountDetails);
+router.get("/balance", verifyToken, getBalanceDetails);
+router.patch("/updateProfile", verifyToken, updateUserProfile);
+router.patch("/settings", verifyToken, updateAccountSettings);
+router.delete("/delete", verifyToken, deleteUser);
+router.get("/preferences", verifyToken, getPreferences);
+router.patch("/password", verifyToken, updatePassword);
+router.delete("/clean-data", verifyToken, deleteAllUserData);
 router.get("/dashboard", verifyToken, getDashboard);
 router.post("/login", loginUser);
 router.post("/signup", signUpUser);
