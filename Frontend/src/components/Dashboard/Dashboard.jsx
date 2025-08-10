@@ -1,30 +1,36 @@
-"use client"
-import { useState } from "react"
-import NavBar from "./NavBar"
-import BarChat from "./BarChart"
-import StatBox from "./StatBox"
-import ChartBox from "./ChartBox"
-import Box from "./Box"
-import AddTransaction from "./Addtransaction"
-import Reports from "./Reports"
-import { DollarSign, TrendingUp, TrendingDown, CreditCard, Calendar } from "lucide-react" // Added CalendarCheck
-import TransactionsPage from "./TransactionsPage"
-import History from "./History"
-import SummaryRow from "./Summary_Row"
-import Profile from "./Profile"
-import EditProfile from "./EditProfile"
-import Settings from "./Settings"
-import { useEffect } from "react"
+"use client";
+import { useState } from "react";
+import NavBar from "./NavBar";
+import BarChat from "./BarChart";
+import StatBox from "./StatBox";
+import ChartBox from "./ChartBox";
+import Box from "./Box";
+import AddTransaction from "./Addtransaction";
+import Reports from "./Reports";
+import {
+  DollarSign,
+  TrendingUp,
+  TrendingDown,
+  CreditCard,
+  Calendar
+} from "lucide-react"; // Added CalendarCheck
+import TransactionsPage from "./TransactionsPage";
+import History from "./History";
+import SummaryRow from "./Summary_Row";
+import Profile from "./Profile";
+import EditProfile from "./EditProfile";
+import Settings from "./Settings";
+import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 function Dashboard() {
   // ===== NAVIGATION STATE =====
-  const [currentPage, setCurrentPage] = useState("Dashboard")
+  const [currentPage, setCurrentPage] = useState("Dashboard");
   const [data, setData] = useState(null);
-  const [transactionType, setTransactionType] = useState("expense") // Track transaction type
+  const [transactionType, setTransactionType] = useState("expense"); // Track transaction type
   const navigate = useNavigate();
-  const token = localStorage.getItem("token")
+  const token = localStorage.getItem("token");
 
-    useEffect(() => {
+  useEffect(() => {
     const fetchData = async () => {
       try {
         if (!token) {
@@ -36,7 +42,7 @@ function Dashboard() {
           method: "GET",
           headers: {
             "Content-Type": "application/json",
-            "Authorization": `Bearer ${token}`
+            Authorization: `Bearer ${token}`
           }
         });
 
@@ -46,7 +52,6 @@ function Dashboard() {
 
         const data = await response.json();
         setData(data);
-
       } catch (error) {
         console.error("Error fetching dashboard data:", error);
       }
@@ -56,8 +61,8 @@ function Dashboard() {
   }, [token, navigate]);
   // ===== DATA SECTION =====
 
-  const overallBudgetLimit = Number(data?.budget_limit || 0)
-  const currentOverallExpenses = Number(data?.expenses || 0)
+  const overallBudgetLimit = Number(data?.budget_limit || 0);
+  const currentOverallExpenses = Number(data?.expenses || 0);
   const currencySymbol = data?.currency_symbol || "$";
 
   localStorage.setItem("dashboardData", JSON.stringify(data));
@@ -71,7 +76,7 @@ function Dashboard() {
       iconColor: "text-green-400",
       trend: "up",
       trendValue: "+12.5%",
-      trendLabel: "vs last month",
+      trendLabel: "vs last month"
     },
     {
       id: 2,
@@ -82,7 +87,7 @@ function Dashboard() {
       iconColor: "text-blue-400",
       trend: "up",
       trendValue: "+8.2%",
-      trendLabel: "vs last month",
+      trendLabel: "vs last month"
     },
     {
       id: 3,
@@ -93,7 +98,7 @@ function Dashboard() {
       iconColor: "text-red-400",
       trend: "down",
       trendValue: "-3.1%",
-      trendLabel: "vs last month",
+      trendLabel: "vs last month"
     },
     {
       id: 4,
@@ -104,74 +109,79 @@ function Dashboard() {
       iconColor: "text-purple-400",
       trend: "up",
       trendValue: "+15.3%",
-      trendLabel: "vs last month",
-    },
-  ]
+      trendLabel: "vs last month"
+    }
+  ];
 
   // Chart data
-  const listOfData = data?.top_categories || []
+  const listOfData = data?.top_categories || [];
 
   const summaryData = [
     {
       label: "Total Income",
       value: data?.income || 0,
       bg: "bg-green-900/20",
-      textColor: "text-green-400",
+      textColor: "text-green-400"
     },
     {
       label: "Total Expenses",
       value: data?.expenses || 0,
       bg: "bg-red-900/20",
-      textColor: "text-red-400",
+      textColor: "text-red-400"
     },
     {
       label: "Last Month Remaining Balance", // Updated label
       value: data?.previous_balance || 0, // Placeholder value
       bg: "bg-blue-900/20",
-      textColor: "text-blue-400",
-    },
-  ]
+      textColor: "text-blue-400"
+    }
+  ];
 
   // ===== EVENT HANDLERS =====
 
   // Handle navigation
   const handleNavigation = (page) => {
-    setCurrentPage(page)
-  }
+    setCurrentPage(page);
+  };
 
   // Handle add transaction with type
   const handleAddTransaction = (type = "expense") => {
-    setTransactionType(type)
-    setCurrentPage("AddTransaction")
-  }
+    setTransactionType(type);
+    setCurrentPage("AddTransaction");
+  };
 
   // Handle stat box clicks
   const handleStatClick = (stat) => {
-    console.log(`Clicked on ${stat.title}:`, stat)
+    console.log(`Clicked on ${stat.title}:`, stat);
     // Add your navigation or modal logic here
-  }
+  };
 
   // ===== RENDER FUNCTIONS =====
 
   // Render Dashboard Content
   const renderDashboardContent = () => {
-    const overallBudgetPercentage = overallBudgetLimit > 0 ? (currentOverallExpenses / overallBudgetLimit) * 100 : 0
-    const budgetRemaining = overallBudgetLimit - currentOverallExpenses
+    const overallBudgetPercentage =
+      overallBudgetLimit > 0
+        ? (currentOverallExpenses / overallBudgetLimit) * 100
+        : 0;
+    const budgetRemaining = overallBudgetLimit - currentOverallExpenses;
     const budgetStatusText =
       overallBudgetLimit > 0
         ? overallBudgetPercentage > 100
           ? `Exceeded by $${Math.abs(budgetRemaining).toFixed(2)}`
           : overallBudgetPercentage === 100
-            ? "Budget Reached"
-            : `$${budgetRemaining.toFixed(2)} Remaining`
-        : "No budget set"
+          ? "Budget Reached"
+          : `$${budgetRemaining.toFixed(2)} Remaining`
+        : "No budget set";
 
     return (
       <div className="p-3 sm:p-4 md:p-6 lg:p-8 bg-black text-white space-y-8">
         {/* ===== HEADER SECTION ===== */}
         <div className="space-y-1">
           <h1 className="text-3xl font-bold text-white">Dashboard</h1>
-          <p className="text-gray-300 text-sm lg:text-base">Welcome back! Here's your financial overview.</p>
+          <p className="text-gray-300 text-sm lg:text-base">
+            Welcome back! Here's your financial overview.
+          </p>
         </div>
 
         {/* ===== STATS CARDS SECTION ===== */}
@@ -214,7 +224,11 @@ function Dashboard() {
         {/* ===== ADDITIONAL INSIGHTS SECTION ===== */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {/* Budget Progress - Consolidated */}
-          <Box title="Budget Progress" subtitle="Monthly spending against your budget" className="shadow-lg">
+          <Box
+            title="Budget Progress"
+            subtitle="Monthly spending against your budget"
+            className="shadow-lg"
+          >
             <div className="space-y-4">
               {/* Budget Limit */}
               <SummaryRow
@@ -253,19 +267,21 @@ function Dashboard() {
           </Box>
 
           {/* Financial Summary */}
-          <Box title="Financial Summary" subtitle="This month overview" className="shadow-lg">
+          <Box
+            title="Financial Summary"
+            subtitle="This month overview"
+            className="shadow-lg"
+          >
             <div className="space-y-4">
               {summaryData.map((item, index) => (
                 <SummaryRow key={index} {...item} />
               ))}
-
-            
             </div>
           </Box>
         </div>
       </div>
-    )
-  }
+    );
+  };
 
   // ===== MAIN RENDER =====
   return (
@@ -284,8 +300,8 @@ function Dashboard() {
               {currentPage === "AddTransaction"
                 ? `Add ${transactionType === "income" ? "Income" : "Expense"}`
                 : currentPage === "History"
-                  ? "Transaction History"
-                  : currentPage}
+                ? "Transaction History"
+                : currentPage}
             </h1>
           </div>
         </div>
@@ -295,18 +311,33 @@ function Dashboard() {
           {/* Conditional Content Rendering */}
           {currentPage === "Dashboard" && renderDashboardContent()}
           {currentPage === "Transactions" && (
-            <TransactionsPage onNavigate={handleNavigation} onAddTransaction={handleAddTransaction} />
+            <TransactionsPage
+              onNavigate={handleNavigation}
+              onAddTransaction={handleAddTransaction}
+            />
           )}
-          {currentPage === "AddTransaction" && <AddTransaction preSelectedType={transactionType} />}
-          {currentPage === "History" && <History onNavigate={handleNavigation} />}
-          {currentPage === "Reports" && <Reports onNavigate={handleNavigation} />}
-          {currentPage === "Profile" && <Profile onNavigate={handleNavigation} />}
-          {currentPage === "EditProfile" && <EditProfile onNavigate={handleNavigation} />}
-          {currentPage === "Settings" && <Settings onNavigate={handleNavigation} />}
+          {currentPage === "AddTransaction" && (
+            <AddTransaction preSelectedType={transactionType} />
+          )}
+          {currentPage === "History" && (
+            <History onNavigate={handleNavigation} />
+          )}
+          {currentPage === "Reports" && (
+            <Reports onNavigate={handleNavigation} />
+          )}
+          {currentPage === "Profile" && (
+            <Profile onNavigate={handleNavigation} />
+          )}
+          {currentPage === "EditProfile" && (
+            <EditProfile onNavigate={handleNavigation} />
+          )}
+          {currentPage === "Settings" && (
+            <Settings onNavigate={handleNavigation} />
+          )}
         </div>
       </main>
     </div>
-  )
+  );
 }
 
-export default Dashboard
+export default Dashboard;
