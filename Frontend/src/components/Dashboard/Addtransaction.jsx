@@ -1,4 +1,6 @@
-import { useState, useEffect } from "react";
+"use client"
+
+import { useState, useEffect } from "react"
 import {
   Tag,
   CreditCard,
@@ -18,10 +20,35 @@ import {
   Smartphone,
   FileText,
   Save,
-  X
-} from "lucide-react";
-import InputField from "../auth/inputField";
-import Box from "./Box";
+  X,
+  CheckCircle,
+} from "lucide-react"
+import InputField from "../auth/inputField"
+import Box from "./Box"
+
+// Toast Notification Component
+const Toast = ({ message, isVisible, onClose }) => {
+  useEffect(() => {
+    if (isVisible) {
+      const timer = setTimeout(() => {
+        onClose()
+      }, 2000) // Hide after 2 seconds
+
+      return () => clearTimeout(timer)
+    }
+  }, [isVisible, onClose])
+
+  if (!isVisible) return null
+
+  return (
+    <div className="fixed top-4 right-4 z-50 animate-in slide-in-from-top-2 duration-300">
+      <div className="bg-[#4ADE80] text-black px-6 py-4 rounded-lg shadow-lg flex items-center gap-3 min-w-[300px]">
+        <CheckCircle className="w-5 h-5 flex-shrink-0" />
+        <span className="font-medium">{message}</span>
+      </div>
+    </div>
+  )
+}
 
 function AddTransaction({ preSelectedType = "expense" }) {
   const [formData, setFormData] = useState({
@@ -31,43 +58,44 @@ function AddTransaction({ preSelectedType = "expense" }) {
     date: "",
     time: "",
     category: "",
-    mode: ""
-  });
+    mode: "",
+  })
 
-  const [errors, setErrors] = useState({});
-  const data= JSON.parse(localStorage.getItem("dashboardData"));
-  const [budgetLimit, setBudgetLimit] = useState(Number(data.budget_limit));
-  const [baseMonthExpenses, setBaseMonthExpenses] = useState(Number(data.expenses) || 0);
-  const currency_symbol = data.currency_symbol || "$";
+  const [errors, setErrors] = useState({})
+  const [toast, setToast] = useState({ isVisible: false, message: "" })
+
+  const data = JSON.parse(localStorage.getItem("dashboardData"))
+  const [budgetLimit, setBudgetLimit] = useState(Number(data.budget_limit))
+  const [baseMonthExpenses, setBaseMonthExpenses] = useState(Number(data.expenses) || 0)
+  const currency_symbol = data.currency_symbol || "$"
+
   useEffect(() => {
     setFormData((prev) => ({
       ...prev,
-      type: preSelectedType
-    }));
-  }, [preSelectedType]);
+      type: preSelectedType,
+    }))
+  }, [preSelectedType])
 
   const currentExpensesWithNewAmount =
     baseMonthExpenses +
-    (formData.type === "expense" && !isNaN(Number.parseFloat(formData.amount))
-      ? Number.parseFloat(formData.amount)
-      : 0);
-  const budgetPercentage =
-    budgetLimit > 0 ? (currentExpensesWithNewAmount / budgetLimit) * 100 : 0;
+    (formData.type === "expense" && !isNaN(Number.parseFloat(formData.amount)) ? Number.parseFloat(formData.amount) : 0)
+
+  const budgetPercentage = budgetLimit > 0 ? (currentExpensesWithNewAmount / budgetLimit) * 100 : 0
 
   const transactionTypes = [
     {
       value: "expense",
       label: "Expense",
       icon: TrendingDown,
-      color: "text-red-500"
+      color: "text-red-500",
     },
     {
       value: "income",
       label: "Income",
       icon: TrendingUp,
-      color: "text-green-400"
-    }
-  ];
+      color: "text-green-400",
+    },
+  ]
 
   const categories = [
     { value: "food", label: "Food", icon: Utensils },
@@ -79,64 +107,68 @@ function AddTransaction({ preSelectedType = "expense" }) {
     { value: "salary", label: "Salary", icon: Briefcase },
     { value: "fun", label: "Fun", icon: Gamepad2 },
     { value: "personal", label: "Personal", icon: User },
-    { value: "other", label: "Other", icon: MoreHorizontal }
-  ];
+    { value: "other", label: "Other", icon: MoreHorizontal },
+  ]
 
   const paymentModes = [
     { value: "card", label: "Card", icon: CreditCard },
     { value: "cheque", label: "Cheque", icon: FileText },
     { value: "cash", label: "Cash", icon: Banknote },
     { value: "banktransfer", label: "Bank Transfer", icon: Smartphone },
-  ];
+  ]
 
   const handleInputChange = (field, value) => {
     setFormData((prev) => ({
       ...prev,
-      [field]: value
-    }));
-
+      [field]: value,
+    }))
     if (errors[field]) {
       setErrors((prev) => ({
         ...prev,
-        [field]: ""
-      }));
+        [field]: "",
+      }))
     }
-  };
+  }
 
   const validateForm = () => {
-    const newErrors = {};
-
-    if (!formData.title.trim()) newErrors.title = "Title is required";
+    const newErrors = {}
+    if (!formData.title.trim()) newErrors.title = "Title is required"
     if (!formData.amount.trim()) {
-      newErrors.amount = "Amount is required";
+      newErrors.amount = "Amount is required"
     } else {
-      const amount = Number.parseFloat(formData.amount);
+      const amount = Number.parseFloat(formData.amount)
       if (isNaN(amount)) {
-        newErrors.amount = "Please enter a valid amount";
+        newErrors.amount = "Please enter a valid amount"
       } else if (amount <= 0) {
-        newErrors.amount = "Amount must be greater than zero";
+        newErrors.amount = "Amount must be greater than zero"
       } else if (amount < 0) {
-        newErrors.amount = "Amount cannot be negative";
+        newErrors.amount = "Amount cannot be negative"
       }
     }
-    if (!formData.date) newErrors.date = "Date is required";
-    if (!formData.time) newErrors.time = "Time is required";
-    if (!formData.category) newErrors.category = "Category is required";
-    if (!formData.mode) newErrors.mode = "Payment mode is required";
+    if (!formData.date) newErrors.date = "Date is required"
+    if (!formData.time) newErrors.time = "Time is required"
+    if (!formData.category) newErrors.category = "Category is required"
+    if (!formData.mode) newErrors.mode = "Payment mode is required"
 
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
-  };
+    setErrors(newErrors)
+    return Object.keys(newErrors).length === 0
+  }
+
+  const showToast = (message) => {
+    setToast({ isVisible: true, message })
+  }
+
+  const hideToast = () => {
+    setToast({ isVisible: false, message: "" })
+  }
 
   const handleSubmit = async (e) => {
-    e.preventDefault();
-
+    e.preventDefault()
     if (validateForm()) {
-      const token = localStorage.getItem("token");
-
+      const token = localStorage.getItem("token")
       if (!token) {
-        alert("You must be signed in to add a transaction.");
-        return;
+        showToast("You must be signed in to add a transaction.")
+        return
       }
 
       const categoryMap = {
@@ -149,15 +181,15 @@ function AddTransaction({ preSelectedType = "expense" }) {
         salary: 7,
         fun: 8,
         personal: 9,
-        other: 10
-      };
+        other: 10,
+      }
 
       const modeMap = {
         card: 1,
         cheque: 2,
         cash: 3,
-        banktransfer: 4
-      };
+        banktransfer: 4,
+      }
 
       const payload = {
         type: formData.type.charAt(0).toUpperCase() + formData.type.slice(1),
@@ -166,26 +198,26 @@ function AddTransaction({ preSelectedType = "expense" }) {
         title: formData.title,
         category: categoryMap[formData.category],
         mode: modeMap[formData.mode],
-        amount: parseFloat(formData.amount)
-      };
+        amount: Number.parseFloat(formData.amount),
+      }
 
       const response = await fetch("/transactions/add", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          "Authorization": `Bearer ${token}`
+          Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify(payload)
-      });
+        body: JSON.stringify(payload),
+      })
 
       if (response.ok) {
-        const newTransaction = await response.json();
-        console.log("New Transaction:", newTransaction);
+        const newTransaction = await response.json()
+        console.log("New Transaction:", newTransaction)
 
-        alert(
-          `${payload.type === "Income" ? "Income" : "Expense"} transaction added successfully!`
-        );
+        // Show success toast instead of alert
+        showToast(`${payload.type === "Income" ? "Income" : "Expense"} transaction added successfully!`)
 
+        // Reset form
         setFormData({
           title: "",
           type: preSelectedType,
@@ -193,14 +225,15 @@ function AddTransaction({ preSelectedType = "expense" }) {
           date: "",
           time: "",
           category: "",
-          mode: ""
-        });
-        setErrors({});
+          mode: "",
+        })
+        setErrors({})
       } else {
-        console.error("Error adding transaction:", response.statusText);
+        console.error("Error adding transaction:", response.statusText)
+        showToast("Error adding transaction. Please try again.")
       }
     }
-  };
+  }
 
   const handleReset = () => {
     setFormData({
@@ -210,25 +243,27 @@ function AddTransaction({ preSelectedType = "expense" }) {
       date: "",
       time: "",
       category: "",
-      mode: ""
-    });
-    setErrors({});
-  };
+      mode: "",
+    })
+    setErrors({})
+  }
 
   const getCurrentDateTime = () => {
-    const now = new Date();
-    const date = now.toISOString().split("T")[0];
-    const time = now.toTimeString().slice(0, 5);
-
+    const now = new Date()
+    const date = now.toISOString().split("T")[0]
+    const time = now.toTimeString().slice(0, 5)
     setFormData((prev) => ({
       ...prev,
       date,
-      time
-    }));
-  };
+      time,
+    }))
+  }
 
   return (
     <div className="min-h-screen bg-black p-4 md:p-8">
+      {/* Toast Notification */}
+      <Toast message={toast.message} isVisible={toast.isVisible} onClose={hideToast} />
+
       <div className="max-w-4xl mx-auto space-y-8">
         {/* ===== HEADER SECTION ===== */}
         <div className="text-center space-y-2">
@@ -236,8 +271,7 @@ function AddTransaction({ preSelectedType = "expense" }) {
             Add {formData.type === "income" ? "Income" : "Expense"} Transaction
           </h1>
           <p className="text-gray-300">
-            Record your {formData.type === "income" ? "income" : "expense"}{" "}
-            transaction details
+            Record your {formData.type === "income" ? "income" : "expense"} transaction details
           </p>
         </div>
 
@@ -246,9 +280,7 @@ function AddTransaction({ preSelectedType = "expense" }) {
           <form onSubmit={handleSubmit} className="space-y-6">
             {/* Transaction Type Selection */}
             <div>
-              <label className="block text-sm font-medium text-gray-300 mb-2">
-                Transaction Type
-              </label>
+              <label className="block text-sm font-medium text-gray-300 mb-2">Transaction Type</label>
               <div className="grid grid-cols-2 gap-4 p-4 bg-gray-800/30 rounded-lg">
                 {transactionTypes.map((type) => (
                   <button
@@ -265,20 +297,18 @@ function AddTransaction({ preSelectedType = "expense" }) {
                       className={`w-5 h-5 ${
                         formData.type === type.value && type.value === "expense"
                           ? "text-red-500"
-                          : formData.type === type.value &&
-                            type.value === "income"
-                          ? "text-[#4ADE80]"
-                          : type.color
+                          : formData.type === type.value && type.value === "income"
+                            ? "text-[#4ADE80]"
+                            : type.color
                       }`}
                     />
                     <span
                       className={`font-medium ${
                         formData.type === type.value && type.value === "expense"
                           ? "text-red-500"
-                          : formData.type === type.value &&
-                            type.value === "income"
-                          ? "text-[#4ADE80]"
-                          : "text-white"
+                          : formData.type === type.value && type.value === "income"
+                            ? "text-[#4ADE80]"
+                            : "text-white"
                       }`}
                     >
                       {type.label}
@@ -292,9 +322,7 @@ function AddTransaction({ preSelectedType = "expense" }) {
             {formData.type === "expense" && (
               <Box className="max-w-2xl mx-auto">
                 <div className="space-y-4">
-                  <h3 className="text-lg font-semibold text-white">
-                    Budget Usage
-                  </h3>
+                  <h3 className="text-lg font-semibold text-white">Budget Usage</h3>
                   {budgetLimit > 0 ? (
                     <>
                       <div className="flex justify-between text-sm">
@@ -313,34 +341,24 @@ function AddTransaction({ preSelectedType = "expense" }) {
                             budgetPercentage > 100
                               ? "bg-red-500"
                               : budgetPercentage >= 80
-                              ? "bg-orange-500"
-                              : "bg-[#4ADE80]"
+                                ? "bg-orange-500"
+                                : "bg-[#4ADE80]"
                           }`}
                           style={{
-                            width: `${Math.min(100, budgetPercentage)}%`
+                            width: `${Math.min(100, budgetPercentage)}%`,
                           }}
                         ></div>
                       </div>
-                      <p
-                        className={`text-xs mt-1 ${
-                          budgetPercentage > 100
-                            ? "text-red-400"
-                            : "text-gray-400"
-                        }`}
-                      >
+                      <p className={`text-xs mt-1 ${budgetPercentage > 100 ? "text-red-400" : "text-gray-400"}`}>
                         {budgetPercentage > 100
-                          ? `Exceeded budget limit by $${(
-                              currentExpensesWithNewAmount - budgetLimit
-                            ).toFixed(2)}`
+                          ? `Exceeded budget limit by $${(currentExpensesWithNewAmount - budgetLimit).toFixed(2)}`
                           : budgetPercentage === 100
-                          ? "Reached budget limit"
-                          : `${Math.round(budgetPercentage)}% of budget used`}
+                            ? "Reached budget limit"
+                            : `${Math.round(budgetPercentage)}% of budget used`}
                       </p>
                     </>
                   ) : (
-                    <p className="text-gray-400 text-sm">
-                      No budget limit added. Set one in Settings to track usage.
-                    </p>
+                    <p className="text-gray-400 text-sm">No budget limit added. Set one in Settings to track usage.</p>
                   )}
                 </div>
               </Box>
@@ -348,9 +366,7 @@ function AddTransaction({ preSelectedType = "expense" }) {
 
             {/* Title Field - Using your InputField component */}
             <InputField
-              label={`${
-                formData.type === "income" ? "Income" : "Expense"
-              } Title`}
+              label={`${formData.type === "income" ? "Income" : "Expense"} Title`}
               type="text"
               id="title"
               placeholder={
@@ -362,9 +378,7 @@ function AddTransaction({ preSelectedType = "expense" }) {
               onChange={(e) => handleInputChange("title", e.target.value)}
               required
             />
-            {errors.title && (
-              <p className="text-red-400 text-sm mt-1">{errors.title}</p>
-            )}
+            {errors.title && <p className="text-red-400 text-sm mt-1">{errors.title}</p>}
 
             {/* Amount Field - Using your InputField component */}
             <InputField
@@ -378,9 +392,7 @@ function AddTransaction({ preSelectedType = "expense" }) {
               onChange={(e) => handleInputChange("amount", e.target.value)}
               required
             />
-            {errors.amount && (
-              <p className="text-red-400 text-sm mt-1">{errors.amount}</p>
-            )}
+            {errors.amount && <p className="text-red-400 text-sm mt-1">{errors.amount}</p>}
 
             {/* Date Field - Using your InputField component */}
             <InputField
@@ -391,9 +403,7 @@ function AddTransaction({ preSelectedType = "expense" }) {
               onChange={(e) => handleInputChange("date", e.target.value)}
               required
             />
-            {errors.date && (
-              <p className="text-red-400 text-sm mt-1">{errors.date}</p>
-            )}
+            {errors.date && <p className="text-red-400 text-sm mt-1">{errors.date}</p>}
 
             {/* Time Field - Using your InputField component with custom button */}
             <div>
@@ -412,9 +422,7 @@ function AddTransaction({ preSelectedType = "expense" }) {
               >
                 Set Current Date & Time
               </button>
-              {errors.time && (
-                <p className="text-red-400 text-sm mt-1">{errors.time}</p>
-              )}
+              {errors.time && <p className="text-red-400 text-sm mt-1">{errors.time}</p>}
             </div>
 
             {/* Category Selection */}
@@ -430,9 +438,7 @@ function AddTransaction({ preSelectedType = "expense" }) {
                   <button
                     key={category.value}
                     type="button"
-                    onClick={() =>
-                      handleInputChange("category", category.value)
-                    }
+                    onClick={() => handleInputChange("category", category.value)}
                     className={`flex flex-col items-center gap-2 p-3 rounded-lg border-2 transition-all duration-200 ${
                       formData.category === category.value
                         ? "border-[#4ADE80] bg-[#4ADE80]/10"
@@ -440,17 +446,11 @@ function AddTransaction({ preSelectedType = "expense" }) {
                     }`}
                   >
                     <category.icon
-                      className={`w-5 h-5 ${
-                        formData.category === category.value
-                          ? "text-[#4ADE80]"
-                          : "text-gray-400"
-                      }`}
+                      className={`w-5 h-5 ${formData.category === category.value ? "text-[#4ADE80]" : "text-gray-400"}`}
                     />
                     <span
                       className={`text-xs font-medium ${
-                        formData.category === category.value
-                          ? "text-[#4ADE80]"
-                          : "text-white"
+                        formData.category === category.value ? "text-[#4ADE80]" : "text-white"
                       }`}
                     >
                       {category.label}
@@ -458,9 +458,7 @@ function AddTransaction({ preSelectedType = "expense" }) {
                   </button>
                 ))}
               </div>
-              {errors.category && (
-                <p className="text-red-400 text-sm mt-1">{errors.category}</p>
-              )}
+              {errors.category && <p className="text-red-400 text-sm mt-1">{errors.category}</p>}
             </div>
 
             {/* Payment Mode Selection */}
@@ -484,17 +482,11 @@ function AddTransaction({ preSelectedType = "expense" }) {
                     }`}
                   >
                     <mode.icon
-                      className={`w-5 h-5 ${
-                        formData.mode === mode.value
-                          ? "text-[#4ADE80]"
-                          : "text-gray-400"
-                      }`}
+                      className={`w-5 h-5 ${formData.mode === mode.value ? "text-[#4ADE80]" : "text-gray-400"}`}
                     />
                     <span
                       className={`text-sm font-medium ${
-                        formData.mode === mode.value
-                          ? "text-[#4ADE80]"
-                          : "text-white"
+                        formData.mode === mode.value ? "text-[#4ADE80]" : "text-white"
                       }`}
                     >
                       {mode.label}
@@ -502,9 +494,7 @@ function AddTransaction({ preSelectedType = "expense" }) {
                   </button>
                 ))}
               </div>
-              {errors.mode && (
-                <p className="text-red-400 text-sm mt-1">{errors.mode}</p>
-              )}
+              {errors.mode && <p className="text-red-400 text-sm mt-1">{errors.mode}</p>}
             </div>
 
             {/* Action Buttons */}
@@ -516,7 +506,6 @@ function AddTransaction({ preSelectedType = "expense" }) {
                 <Save className="w-5 h-5" />
                 Add {formData.type === "income" ? "Income" : "Expense"}
               </button>
-
               <button
                 type="button"
                 onClick={handleReset}
@@ -531,11 +520,7 @@ function AddTransaction({ preSelectedType = "expense" }) {
 
         {/* ===== PREVIEW SECTION ===== */}
         {(formData.title || formData.amount) && (
-          <Box
-            title="Transaction Preview"
-            subtitle="Review your transaction details"
-            className="max-w-2xl mx-auto"
-          >
+          <Box title="Transaction Preview" subtitle="Review your transaction details" className="max-w-2xl mx-auto">
             <div className="space-y-3">
               <div className="flex justify-between items-center p-3 bg-gray-800/30 rounded-lg">
                 <span className="text-gray-300">Type:</span>
@@ -545,28 +530,17 @@ function AddTransaction({ preSelectedType = "expense" }) {
                   ) : (
                     <TrendingDown className="w-4 h-4 text-red-400" />
                   )}
-                  <span
-                    className={`font-medium ${
-                      formData.type === "income"
-                        ? "text-green-400"
-                        : "text-red-400"
-                    }`}
-                  >
-                    {formData.type.charAt(0).toUpperCase() +
-                      formData.type.slice(1)}
+                  <span className={`font-medium ${formData.type === "income" ? "text-green-400" : "text-red-400"}`}>
+                    {formData.type.charAt(0).toUpperCase() + formData.type.slice(1)}
                   </span>
                 </div>
               </div>
-
               {formData.title && (
                 <div className="flex justify-between items-center p-3 bg-gray-800/30 rounded-lg">
                   <span className="text-gray-300">Title:</span>
-                  <span className="text-white font-medium">
-                    {formData.title}
-                  </span>
+                  <span className="text-white font-medium">{formData.title}</span>
                 </div>
               )}
-
               {formData.amount && (
                 <div className="flex justify-between items-center p-3 bg-gray-800/30 rounded-lg">
                   <span className="text-gray-300">Amount:</span>
@@ -576,7 +550,6 @@ function AddTransaction({ preSelectedType = "expense" }) {
                   </span>
                 </div>
               )}
-
               {(formData.date || formData.time) && (
                 <div className="flex justify-between items-center p-3 bg-gray-800/30 rounded-lg">
                   <span className="text-gray-300">Date & Time:</span>
@@ -585,16 +558,12 @@ function AddTransaction({ preSelectedType = "expense" }) {
                   </span>
                 </div>
               )}
-
               {formData.category && (
                 <div className="flex justify-between items-center p-3 bg-gray-800/30 rounded-lg">
                   <span className="text-gray-300">Category:</span>
-                  <span className="text-white capitalize">
-                    {formData.category}
-                  </span>
+                  <span className="text-white capitalize">{formData.category}</span>
                 </div>
               )}
-
               {formData.mode && (
                 <div className="flex justify-between items-center p-3 bg-gray-800/30 rounded-lg">
                   <span className="text-gray-300">Payment Mode:</span>
@@ -606,7 +575,7 @@ function AddTransaction({ preSelectedType = "expense" }) {
         )}
       </div>
     </div>
-  );
+  )
 }
 
-export default AddTransaction;
+export default AddTransaction
