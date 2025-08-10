@@ -14,25 +14,58 @@ import SummaryRow from "./Summary_Row"
 import Profile from "./Profile"
 import EditProfile from "./EditProfile"
 import Settings from "./Settings"
-
+import { useEffect } from "react"
+import { useNavigate } from "react-router-dom";
 function Dashboard() {
   // ===== NAVIGATION STATE =====
   const [currentPage, setCurrentPage] = useState("Dashboard")
+  const [data, setData] = useState(null);
   const [transactionType, setTransactionType] = useState("expense") // Track transaction type
+  const navigate = useNavigate();
+  const token = localStorage.getItem("token")
 
+    useEffect(() => {
+    const fetchData = async () => {
+      try {
+        if (!token) {
+          navigate("/users/signin");
+          return;
+        }
+
+        const response = await fetch("/users/dashboard", {
+          method: "GET",
+          headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${token}`
+          }
+        });
+
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+
+        const data = await response.json();
+        setData(data);
+
+      } catch (error) {
+        console.error("Error fetching dashboard data:", error);
+      }
+    };
+
+    fetchData();
+  }, [token, navigate]);
   // ===== DATA SECTION =====
 
-  // Placeholder for overall budget and expenses (can be fetched from settings/transactions)
-  const overallBudgetLimit = 1000
-  const currentOverallExpenses = 750 // This would be an aggregation of all expenses for the current month
+  const overallBudgetLimit = Number(data?.budget_limit || 0)
+  const currentOverallExpenses = Number(data?.expenses || 0)
+  const currencySymbol = data?.currency_symbol || "$";
 
-  // Stats data for efficient mapping
   const statsData = [
     {
       id: 1,
       title: "Total Balance",
-      value: "$12,450",
-      icon: DollarSign,
+      value: data?.balance || 0,
+      currencySymbol: currencySymbol,
       iconBgColor: "bg-green-900",
       iconColor: "text-green-400",
       trend: "up",
@@ -42,7 +75,7 @@ function Dashboard() {
     {
       id: 2,
       title: "Monthly Income",
-      value: "$5,200",
+      value: data?.income || 0,
       icon: TrendingUp,
       iconBgColor: "bg-blue-900",
       iconColor: "text-blue-400",
@@ -53,7 +86,7 @@ function Dashboard() {
     {
       id: 3,
       title: "Monthly Expenses",
-      value: "$3,150",
+      value: data?.expenses || 0,
       icon: TrendingDown,
       iconBgColor: "bg-red-900",
       iconColor: "text-red-400",
@@ -63,8 +96,8 @@ function Dashboard() {
     },
     {
       id: 4,
-      title: "Last Month Remaining Balance", // Updated title
-      value: "$2,050", // Placeholder value
+      title: "Last Month Remaining Balance",
+      value: data?.previous_balance || 0,
       icon: CreditCard,
       iconBgColor: "bg-purple-900",
       iconColor: "text-purple-400",
@@ -75,43 +108,27 @@ function Dashboard() {
   ]
 
   // Chart data
-  const listOfData = [
-    { category: "Food", expense: 400 },
-    { category: "Transport", expense: 300 },
-    { category: "Entertainment", expense: 200 },
-    { category: "Utilities", expense: 150 },
-    { category: "Others", expense: 100 },
-  ]
+  const listOfData = data?.top_categories || []
 
-  // Financial summary data for additional insights
   const summaryData = [
     {
       label: "Total Income",
-      value: "$5,200",
+      value: data?.income || 0,
       bg: "bg-green-900/20",
       textColor: "text-green-400",
     },
     {
       label: "Total Expenses",
-      value: "$3,150",
+      value: data?.expenses || 0,
       bg: "bg-red-900/20",
       textColor: "text-red-400",
     },
     {
       label: "Last Month Remaining Balance", // Updated label
-      value: "$2,050", // Placeholder value
+      value: data?.previous_balance || 0, // Placeholder value
       bg: "bg-blue-900/20",
       textColor: "text-blue-400",
     },
-  ]
-
-  // Upcoming payments data
-  const upcomingPayments = [
-    { id: 1, name: "Rent", amount: 1200, dueDate: "2025-07-01", status: "due" },
-    { id: 2, name: "Electricity Bill", amount: 85, dueDate: "2025-07-10", status: "due" },
-    { id: 3, name: "Internet Bill", amount: 60, dueDate: "2025-07-15", status: "due" },
-    { id: 4, name: "Car Loan", amount: 350, dueDate: "2025-07-20", status: "due" },
-    { id: 5, name: "Gym Membership", amount: 45, dueDate: "2025-07-25", status: "due" },
   ]
 
   // ===== EVENT HANDLERS =====
@@ -164,6 +181,7 @@ function Dashboard() {
               title={stat.title}
               value={stat.value}
               icon={stat.icon}
+              currencySymbol={stat.currencySymbol}
               iconBgColor={stat.iconBgColor}
               iconColor={stat.iconColor}
               trend={stat.trend}
@@ -200,7 +218,7 @@ function Dashboard() {
               {/* Budget Limit */}
               <SummaryRow
                 label="Monthly Budget Limit"
-                value={`$${overallBudgetLimit.toFixed(2)}`}
+                value={`${currencySymbol}${overallBudgetLimit.toFixed(2)}`}
                 bg="bg-green-900/20"
                 textColor="text-green-400"
               />
@@ -208,7 +226,7 @@ function Dashboard() {
               {/* Remaining Budget */}
               <SummaryRow
                 label="Remaining Budget"
-                value={`$${budgetRemaining.toFixed(2)}`}
+                value={`${currencySymbol}${budgetRemaining.toFixed(2)}`}
                 bg={"bg-red-900/20"}
                 textColor={"text-red-400"}
               />

@@ -5,6 +5,7 @@ function StatBox({
   title,
   value,
   icon: Icon,
+  currencySymbol,
   iconBgColor,
   iconColor,
   trend,
@@ -20,6 +21,7 @@ function StatBox({
   return (
     <Box
       title={title}
+      currencyIcon={currencySymbol}
       icon={Icon}
       iconBgColor={iconBgColor}
       iconColor={iconColor}

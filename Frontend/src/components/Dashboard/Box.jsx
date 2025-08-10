@@ -1,9 +1,8 @@
-"use client"
-
 function Box({
   children,
   title,
   subtitle,
+  currencyIcon,
   icon: Icon,
   iconBgColor = "bg-green-900",
   iconColor = "text-green-400",
@@ -23,20 +22,31 @@ function Box({
     ${onClick ? "cursor-pointer hover:shadow-xl hover:scale-[1.02]" : ""} 
     ${padding} 
     ${className}
-  `
+  `;
+
+  // Show header if title, subtitle, icon, or currencyIcon exist
+  const showHeader = title || subtitle || Icon || currencyIcon;
 
   return (
     <div className={baseClasses.trim()} onClick={onClick} {...props}>
       {/* Header Section */}
-      {(title || subtitle || Icon) && (
+      {showHeader && (
         <div className="flex justify-between items-start mb-4">
           <div className="flex-1">
-            {title && <h3 className="text-lg font-semibold text-white mb-1">{title}</h3>}
+            {title && (
+              <h3 className="text-lg font-semibold text-white mb-1">{title}</h3>
+            )}
             {subtitle && <p className="text-sm text-gray-300">{subtitle}</p>}
           </div>
-          {Icon && (
-            <div className={`h-12 w-12 flex items-center justify-center ${iconBgColor} rounded-lg ml-4`}>
-              <Icon className={`w-6 h-6 ${iconColor}`} />
+          {(currencyIcon || Icon) && (
+            <div
+              className={`h-12 w-12 flex items-center justify-center ${iconBgColor} rounded-lg ml-4 text-xl font-bold ${iconColor}`}
+            >
+              {currencyIcon ? (
+                <span>{currencyIcon}</span>
+              ) : (
+                <Icon className={`w-6 h-6 ${iconColor}`} />
+              )}
             </div>
           )}
         </div>
@@ -45,7 +55,7 @@ function Box({
       {/* Content Section */}
       <div className="text-white">{children}</div>
     </div>
-  )
+  );
 }
 
-export default Box
+export default Box;
