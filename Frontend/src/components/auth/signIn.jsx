@@ -27,7 +27,6 @@ function signIn() {
       body: JSON.stringify({ email, password }),
     })
     const data = await userData.json()
-    console.log(data)
     if (userData.ok) {
       localStorage.setItem("token", data.token)
       localStorage.setItem("user", JSON.stringify(data.user))

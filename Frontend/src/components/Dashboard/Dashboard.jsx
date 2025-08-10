@@ -60,6 +60,7 @@ function Dashboard() {
   const currentOverallExpenses = Number(data?.expenses || 0)
   const currencySymbol = data?.currency_symbol || "$";
 
+  localStorage.setItem("dashboardData", JSON.stringify(data));
   const statsData = [
     {
       id: 1,
