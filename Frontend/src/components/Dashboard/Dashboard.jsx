@@ -28,6 +28,8 @@ function Dashboard() {
   const [data, setData] = useState(null);
   const [transactionType, setTransactionType] = useState("expense"); // Track transaction type
   const navigate = useNavigate();
+  const monthIndex = new Date().getMonth()+1;
+  localStorage.setItem("currentMonth", monthIndex);
   const token = localStorage.getItem("token");
 
   useEffect(() => {
@@ -38,7 +40,7 @@ function Dashboard() {
           return;
         }
 
-        const response = await fetch("/users/dashboard", {
+        const response = await fetch(`/users/dashboard?month=${monthIndex}`, {
           method: "GET",
           headers: {
             "Content-Type": "application/json",

@@ -6,7 +6,8 @@ import {
   getAllCategories,
   getAllPaymentMethods,
   cleanupOldTransactions,
-  getTransactionsHistory
+  getTransactionsHistory,
+  getRecentTransactions
 } from "../controllers/TransactionController.js";
 
 const router = express.Router();
@@ -17,5 +18,6 @@ router.get("/categories", verifyToken, getAllCategories);
 router.get("/payment-methods", verifyToken, getAllPaymentMethods);
 router.delete("/cleanup/:userId", verifyToken, cleanupOldTransactions);
 router.get("/history", verifyToken, getTransactionsHistory);
+router.get("/recent", verifyToken, getRecentTransactions);
 
 export default router;

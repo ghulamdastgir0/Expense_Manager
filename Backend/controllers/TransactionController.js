@@ -100,3 +100,26 @@ export const getTransactionsHistory = async (req, res) => {
         return res.status(500).json({message: 'Server error'});
     }
 }
+
+export const getRecentTransactions= async (req, res) => {
+  const userId = req.user.id;
+  const month = req.query.month;
+  if(!userId || !month) {
+    return res.status(400).json({message: 'User ID and month are required'});
+  }
+  
+  try {
+    const query = 'select * from get_top_5_transactions($1, $2)';
+    const values = [userId, month];
+    const result = await pool.query(query, values);
+    
+    if (result.rows.length === 0) {
+      return res.status(200).json({message: 'No recent transactions found for this month'});
+    }
+    
+    return res.status(200).json(result.rows);
+  } catch (error) {
+    console.error('Error fetching recent transactions:', error);
+    return res.status(500).json({message: 'Server error'});
+  }
+}

@@ -134,12 +134,14 @@ export const deleteAllUserData = async (req, res) => {
 // 9. GET dashboard stats
 export const getDashboard = async (req, res) => {
     const userId = req.user.id;
+    const month = req.query.month;
+    console.log(month);
     if (!userId) {
         return res.status(400).json({ message: 'User ID is required' });
     }
     try{
-        const query = 'SELECT * FROM get_dashboard($1)';
-        const values = [userId];
+        const query = 'SELECT * FROM get_dashboard($1, $2)';
+        const values = [userId, month];
         const result = await pool.query(query, values);
         
         if (result.rows.length === 0) {

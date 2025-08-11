@@ -3,6 +3,7 @@ import Box from "./Box"
 function ListBox({
   title,
   subtitle,
+  currencyIcon,
   items = [],
   renderItem,
   emptyMessage = "No items to display",
@@ -14,9 +15,8 @@ function ListBox({
   ...props
 }) {
   const displayItems = maxItems ? items.slice(0, maxItems) : items
-
   return (
-    <Box title={title} subtitle={subtitle} className={className} {...props}>
+    <Box title={title} subtitle={subtitle} currencyIcon={currencyIcon} className={className} {...props}>
       <div className="space-y-4">
         {displayItems.length > 0 ? (
           displayItems.map((item, index) => (
