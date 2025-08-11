@@ -1,116 +1,99 @@
-import { useState } from "react"
+"use client"
+import { useState, useEffect } from "react"
 import { Search, Download, ArrowUpDown, Eye } from "lucide-react"
 import Box from "./Box"
+import { useNavigate } from "react-router-dom"
 
 function History({ onNavigate }) {
   // Extended transactions data
-  const [allTransactions] = useState([
-    {
-      id: 1,
-      description: "Grocery Store",
-      amount: -85.5,
-      date: "2024-01-15",
-      time: "14:30",
-      category: "Food",
-      mode: "Card",
-      status: "Completed",
-    },
-    {
-      id: 2,
-      description: "Salary Deposit",
-      amount: 2500.0,
-      date: "2024-01-14",
-      time: "09:00",
-      category: "Income",
-      mode: "Bank Transfer",
-      status: "Completed",
-    },
-    {
-      id: 3,
-      description: "Gas Station",
-      amount: -45.2,
-      date: "2024-01-13",
-      time: "18:45",
-      category: "Transport",
-      mode: "Card",
-      status: "Completed",
-    },
-    {
-      id: 4,
-      description: "Netflix Subscription",
-      amount: -15.99,
-      date: "2024-01-12",
-      time: "12:00",
-      category: "Entertainment",
-      mode: "Card",
-      status: "Completed",
-    },
-    {
-      id: 5,
-      description: "Electric Bill",
-      amount: -120.0,
-      date: "2024-01-10",
-      time: "16:20",
-      category: "Utilities",
-      mode: "Net Banking",
-      status: "Completed",
-    },
-    {
-      id: 6,
-      description: "Coffee Shop",
-      amount: -12.5,
-      date: "2024-01-08",
-      time: "08:15",
-      category: "Food",
-      mode: "Cash",
-      status: "Completed",
-    },
-    {
-      id: 7,
-      description: "Freelance Payment",
-      amount: 800.0,
-      date: "2024-01-07",
-      time: "11:30",
-      category: "Income",
-      mode: "Bank Transfer",
-      status: "Completed",
-    },
-    {
-      id: 8,
-      description: "Restaurant Dinner",
-      amount: -65.0,
-      date: "2024-01-06",
-      time: "19:45",
-      category: "Food",
-      mode: "Card",
-      status: "Completed",
-    },
-    {
-      id: 9,
-      description: "Uber Ride",
-      amount: -18.5,
-      date: "2024-01-05",
-      time: "22:10",
-      category: "Transport",
-      mode: "Card",
-      status: "Completed",
-    },
-    {
-      id: 10,
-      description: "Online Shopping",
-      amount: -89.99,
-      date: "2024-01-04",
-      time: "15:20",
-      category: "Shopping",
-      mode: "Card",
-      status: "Completed",
-    },
-  ])
-
+  const [allTransactions, setAllTransactions] = useState([])
   const [searchTerm, setSearchTerm] = useState("")
   const [selectedCategory, setSelectedCategory] = useState("all")
   const [sortBy, setSortBy] = useState("date")
   const [sortOrder, setSortOrder] = useState("desc")
+
+  // Month selection state
+  const token = localStorage.getItem("token")
+  const data = JSON.parse(localStorage.getItem("dashboardData"))
+  const monthIndex = localStorage.getItem("currentMonth")
+  const navigate = useNavigate()
+  const [selectedMonth, setSelectedMonth] = useState(monthIndex)
+  const currency_symbol = data?.currency_symbol || "$"
+
+  // Month names array
+  const monthNames = [
+    "January",
+    "February",
+    "March",
+    "April",
+    "May",
+    "June",
+    "July",
+    "August",
+    "September",
+    "October",
+    "November",
+    "December",
+  ]
+
+  // Helper function to format date
+  const formatDate = (dateString) => {
+    try {
+      const date = new Date(dateString)
+      return date.toLocaleDateString()
+    } catch (error) {
+      return dateString
+    }
+  }
+
+  // Fetch transactions when month changes
+  useEffect(() => {
+    const fetchTransactions = async () => {
+      if (!token) {
+        navigate("/signin")
+        return
+      }
+
+      try {
+        const response = await fetch(`/transactions/history?month=${selectedMonth}`, {
+          method: "GET",
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+        })
+
+        if (response.ok) {
+          const responseData = await response.json()
+          console.log("Fetched transactions:", responseData)
+
+          // Handle both direct array and nested transactions array
+          const transactions = responseData.transactions || responseData
+
+          // Map the server data to match frontend expectations
+          const mappedTransactions = transactions.map((tx) => ({
+            id: tx.id,
+            description: tx.description,
+            amount: Number.parseFloat(tx.amount), // Convert string to number
+            date: formatDate(tx.date), // Format the date
+            time: tx.transaction_time, // Use transaction_time from server
+            category: tx.category || "Other",
+            mode: tx.mode || "Unknown",
+          }))
+
+          setAllTransactions(mappedTransactions)
+        } else {
+          console.error("Failed to fetch transactions")
+          setAllTransactions([])
+        }
+      } catch (error) {
+        console.error("Error fetching transactions:", error)
+        setAllTransactions([])
+      }
+    }
+
+    fetchTransactions()
+  }, [selectedMonth, token, navigate])
 
   // Filter and sort transactions
   const filteredTransactions = allTransactions
@@ -129,6 +112,7 @@ function History({ onNavigate }) {
           bValue = Math.abs(b.amount)
           break
         case "date":
+          // For date sorting, we need to create proper date objects
           aValue = new Date(a.date + " " + a.time)
           bValue = new Date(b.date + " " + b.time)
           break
@@ -151,8 +135,106 @@ function History({ onNavigate }) {
   const categories = ["all", "food", "transport", "entertainment", "utilities", "income", "shopping"]
 
   const handleExport = () => {
-    console.log("Exporting transaction history...")
-    // Add export logic here
+    try {
+      console.log("Exporting transaction history...")
+
+      // Create a new window for printing
+      const printWindow = window.open("", "_blank")
+
+      // Calculate summary data
+      const totalIncome = filteredTransactions.filter((t) => t.amount > 0).reduce((sum, t) => sum + t.amount, 0)
+      const totalExpenses = Math.abs(
+        filteredTransactions.filter((t) => t.amount < 0).reduce((sum, t) => sum + t.amount, 0),
+      )
+      const netAmount = filteredTransactions.reduce((sum, t) => sum + t.amount, 0)
+      const selectedMonthName = monthNames[selectedMonth - 1]
+
+      // Create HTML content for printing
+      const htmlContent = `
+        <!DOCTYPE html>
+        <html>
+          <head>
+            <title>Transaction History - ${selectedMonthName}</title>
+            <style>
+              body { font-family: Arial, sans-serif; margin: 20px; }
+              .header { text-align: center; margin-bottom: 30px; }
+              .summary { margin-bottom: 30px; padding: 15px; background-color: #f5f5f5; }
+              .summary-item { margin: 5px 0; }
+              table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+              th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+              th { background-color: #4ade80; color: black; font-weight: bold; }
+              tr:nth-child(even) { background-color: #f9f9f9; }
+              .amount-positive { color: #22c55e; font-weight: bold; }
+              .amount-negative { color: #ef4444; font-weight: bold; }
+              .print-date { font-size: 12px; color: #666; }
+              @media print {
+                body { margin: 0; }
+                .no-print { display: none; }
+              }
+            </style>
+          </head>
+          <body>
+            <div class="header">
+              <h1>Transaction History Report</h1>
+              <p class="print-date">Generated on: ${new Date().toLocaleDateString()}</p>
+              <p class="print-date">Month: ${selectedMonthName}</p>
+            </div>
+            
+            <div class="summary">
+              <h2>Summary</h2>
+              <div class="summary-item"><strong>Total Income:</strong> ${currency_symbol}${totalIncome.toFixed(2)}</div>
+              <div class="summary-item"><strong>Total Expenses:</strong> ${currency_symbol}${totalExpenses.toFixed(2)}</div>
+              <div class="summary-item"><strong>Net Amount:</strong> ${currency_symbol}${netAmount.toFixed(2)}</div>
+              <div class="summary-item"><strong>Total Transactions:</strong> ${filteredTransactions.length}</div>
+            </div>
+            
+            <table>
+              <thead>
+                <tr>
+                  <th>Description</th>
+                  <th>Category</th>
+                  <th>Date</th>
+                  <th>Time</th>
+                  <th>Mode</th>
+                  <th>Amount</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${filteredTransactions
+                  .map(
+                    (transaction) => `
+                  <tr>
+                    <td>${transaction.description}</td>
+                    <td>${transaction.category}</td>
+                    <td>${transaction.date}</td>
+                    <td>${transaction.time}</td>
+                    <td>${transaction.mode}</td>
+                    <td class="${transaction.amount > 0 ? "amount-positive" : "amount-negative"}">
+                      ${transaction.amount > 0 ? "+" : "-"}${currency_symbol}${Math.abs(transaction.amount).toFixed(2)}
+                    </td>
+                  </tr>
+                `,
+                  )
+                  .join("")}
+              </tbody>
+            </table>
+          </body>
+        </html>
+      `
+
+      // Write content to new window and trigger print
+      printWindow.document.write(htmlContent)
+      printWindow.document.close()
+
+      // Wait for content to load then print
+      printWindow.onload = () => {
+        printWindow.print()
+        printWindow.close()
+      }
+    } catch (error) {
+      console.error("Error exporting:", error)
+      alert("Failed to export. Please try again.")
+    }
   }
 
   const toggleSort = (field) => {
@@ -162,6 +244,11 @@ function History({ onNavigate }) {
       setSortBy(field)
       setSortOrder("desc")
     }
+  }
+
+  const handleMonthChange = (e) => {
+    const monthIndex = Number.parseInt(e.target.value)
+    setSelectedMonth(monthIndex)
   }
 
   return (
@@ -190,12 +277,11 @@ function History({ onNavigate }) {
         </div>
       </div>
 
-      
       {/* ===== SUMMARY SECTION ===== */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <Box title="Total Income" className="shadow-lg">
           <div className="text-2xl font-bold text-green-400">
-            +$
+            +{currency_symbol}
             {filteredTransactions
               .filter((t) => t.amount > 0)
               .reduce((sum, t) => sum + t.amount, 0)
@@ -204,7 +290,7 @@ function History({ onNavigate }) {
         </Box>
         <Box title="Total Expenses" className="shadow-lg">
           <div className="text-2xl font-bold text-red-400">
-            -$
+            -{currency_symbol}
             {Math.abs(filteredTransactions.filter((t) => t.amount < 0).reduce((sum, t) => sum + t.amount, 0)).toFixed(
               2,
             )}
@@ -212,14 +298,15 @@ function History({ onNavigate }) {
         </Box>
         <Box title="Net Amount" className="shadow-lg">
           <div className="text-2xl font-bold text-blue-400">
-            ${filteredTransactions.reduce((sum, t) => sum + t.amount, 0).toFixed(2)}
+            {currency_symbol}
+            {filteredTransactions.reduce((sum, t) => sum + t.amount, 0).toFixed(2)}
           </div>
         </Box>
       </div>
 
       {/* ===== FILTERS SECTION ===== */}
       <Box title="Filters & Search" className="shadow-lg">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
           {/* Search */}
           <div className="relative">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
@@ -264,6 +351,19 @@ function History({ onNavigate }) {
               <ArrowUpDown className="w-4 h-4" />
             </button>
           </div>
+
+          {/* Month Filter */}
+          <select
+            value={selectedMonth}
+            onChange={handleMonthChange}
+            className="w-full px-4 py-3 bg-gray-800 text-white rounded-lg border border-gray-600 focus:ring-2 focus:ring-[#4ADE80] focus:outline-none"
+          >
+            {monthNames.map((month, index) => (
+              <option key={month} value={index + 1}>
+                {month}
+              </option>
+            ))}
+          </select>
         </div>
       </Box>
 
@@ -298,7 +398,6 @@ function History({ onNavigate }) {
                 >
                   Amount
                 </th>
-                <th className="text-center py-3 px-2 text-gray-300 font-medium">Status</th>
               </tr>
             </thead>
             <tbody>
@@ -319,25 +418,20 @@ function History({ onNavigate }) {
                   <td className="py-4 px-2 text-gray-300 text-sm">{transaction.mode}</td>
                   <td className="py-4 px-2 text-right">
                     <span className={`font-semibold ${transaction.amount > 0 ? "text-green-400" : "text-red-400"}`}>
-                      {transaction.amount > 0 ? "+" : "-"}${Math.abs(transaction.amount).toFixed(2)}
-                    </span>
-                  </td>
-                  <td className="py-4 px-2 text-center">
-                    <span className="px-2 py-1 bg-green-900/30 text-green-400 rounded-full text-xs">
-                      {transaction.status}
+                      {transaction.amount > 0 ? "+" : "-"}
+                      {currency_symbol}
+                      {Math.abs(transaction.amount).toFixed(2)}
                     </span>
                   </td>
                 </tr>
               ))}
             </tbody>
           </table>
-
           {filteredTransactions.length === 0 && (
             <div className="text-center py-8 text-gray-400">No transactions found matching your criteria.</div>
           )}
         </div>
       </Box>
-
     </div>
   )
 }
