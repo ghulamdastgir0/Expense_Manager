@@ -8,7 +8,6 @@ import Box from "./Box";
 import AddTransaction from "./Addtransaction";
 import Reports from "./Reports";
 import {
-  DollarSign,
   TrendingUp,
   TrendingDown,
   CreditCard,
@@ -35,10 +34,6 @@ function Dashboard() {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        if (!token) {
-          navigate("/users/signin");
-          return;
-        }
 
         const response = await fetch(`/users/dashboard?month=${monthIndex}`, {
           method: "GET",
@@ -55,6 +50,7 @@ function Dashboard() {
         const data = await response.json();
         setData(data);
       } catch (error) {
+        navigate("/signin");
         console.error("Error fetching dashboard data:", error);
       }
     };

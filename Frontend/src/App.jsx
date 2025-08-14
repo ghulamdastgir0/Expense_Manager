@@ -7,7 +7,6 @@ import Dashboard from './components/Dashboard/Dashboard'
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom'
 import ProtectedRoute from './ProtectedRoute'
 function App() {
-  const [count, setCount] = useState(0)
 
   return (
     <>
