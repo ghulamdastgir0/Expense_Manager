@@ -1,5 +1,5 @@
 "use client"
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import {
   Edit,
   Mail,
@@ -7,291 +7,224 @@ import {
   Calendar,
   Shield,
   LogOut,
-  Clock,
   DollarSign,
   BarChart2,
   Target,
   TrendingUp,
-  TrendingDown,
 } from "lucide-react"
 import Box from "./Box"
 import StatBox from "./StatBox"
-import profileimage from "../../assets/pic1.png" // Importing the user profile image
+import profileimage from "../../assets/pic1.png"
+import { userAPI, dashboardAPI } from "../../api/api"
 
 function Profile({ onNavigate }) {
-  // User profile data - this would typically come from your auth/database system
-  const [userProfile] = useState({
-    name: "Chris Flores",
-    email: "lucia.rodriguez@example.com",
-    phone: "+1 (555) 123-4567",
-    joinDate: "January 2023",
-    avatar: profileimage,
-    isOnline: true,
-    bio: "Financial enthusiast focused on smart budgeting and investment strategies. Love tracking expenses and optimizing savings.",
-    accountBalance: 12450,
-    avgTransactionsPerMonth: 350,
-    lastMonthSavings: {
-      value: 2050,
-      percentageChange: 15.3,
-      trend: "up",
-    },
-    budgetLimit: 1000,
-    accountCreated: "Jan 15, 2023",
-    currency: "USD",
-    timezone: "PST",
-    emailVerified: true,
-    phoneVerified: true,
-  })
+  const [userProfile, setUserProfile] = useState(null)
+  const [financialGoals, setFinancialGoals] = useState([])
+  const [stats, setStats] = useState([])
+  const [loading, setLoading] = useState(true)
 
-  // Financial goals data (kept as is)
-  const [financialGoals] = useState([
-    { name: "Emergency Fund", target: 10000, current: 7500, color: "bg-green-500" },
-    { name: "Vacation Savings", target: 5000, current: 2800, color: "bg-blue-500" },
-    { name: "Investment Goal", target: 15000, current: 12000, color: "bg-purple-500" },
-  ])
+  // ================= FETCH API =================
+  useEffect(() => {
+    const fetchProfile = async () => {
+      try {
+        const [userRes, dashRes] = await Promise.all([
+          userAPI.getProfile(),
+          dashboardAPI.getStats(),
+        ])
 
-  const handleEditProfile = () => {
-    onNavigate("EditProfile")
-  }
+        const user = userRes.data.user
+        const s = dashRes.data.stats
+
+        setUserProfile({
+          name: user.name,
+          email: user.email,
+          phone: user.phone,
+          joinDate: user.created_at,
+          avatar: user.profile_image || profileimage,
+          isOnline: true,
+          bio: user.bio || "No bio added",
+          accountBalance: s.balance,
+          avgTransactionsPerMonth: s.avg_transactions,
+          lastMonthSavings: {
+            value: s.savings,
+            percentageChange: s.savings_change,
+            trend: s.savings_change >= 0 ? "up" : "down",
+          },
+          budgetLimit: s.budget_limit,
+          currency: s.currency,
+          timezone: s.timezone,
+          emailVerified: user.email_verified,
+          phoneVerified: user.phone_verified,
+        })
+
+        setFinancialGoals(dashRes.data.goals || [])
+
+        setStats([
+          {
+            id: 1,
+            title: "Account Balance",
+            value: `$${s.balance}`,
+            icon: DollarSign,
+            iconBgColor: "bg-green-900",
+            iconColor: "text-green-400",
+            trend: "up",
+            trendValue: "+12%",
+            trendLabel: "vs last month",
+          },
+          {
+            id: 2,
+            title: "Avg Transactions",
+            value: s.avg_transactions,
+            icon: BarChart2,
+            iconBgColor: "bg-blue-900",
+            iconColor: "text-blue-400",
+            trend: "up",
+            trendValue: "+5%",
+            trendLabel: "vs last month",
+          },
+          {
+            id: 3,
+            title: "Savings",
+            value: `$${s.savings}`,
+            icon: TrendingUp,
+            iconBgColor: "bg-purple-900",
+            iconColor: "text-purple-400",
+            trend: "up",
+            trendValue: `${s.savings_change}%`,
+            trendLabel: "vs previous month",
+          },
+          {
+            id: 4,
+            title: "Budget Limit",
+            value: `$${s.budget_limit}`,
+            icon: Target,
+            iconBgColor: "bg-yellow-900",
+            iconColor: "text-yellow-400",
+            trend: "",
+            trendValue: "",
+            trendLabel: "",
+          },
+        ])
+      } catch (err) {
+        console.error("Profile API error:", err.message)
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    fetchProfile()
+  }, [])
+
+  // ================= ACTIONS =================
+  const handleEditProfile = () => onNavigate("EditProfile")
 
   const handleLogout = () => {
-    alert("Logged out successfully!") // Simulate logout
-    onNavigate("Dashboard") // Navigate to dashboard or login page after logout
+    alert("Logged out successfully")
+    onNavigate("Dashboard")
   }
 
-  // Profile stats data - UPDATED
-  const profileStats = [
-    {
-      id: 1,
-      title: "Account Balance",
-      value: `$${userProfile.accountBalance.toLocaleString()}`,
-      icon: DollarSign,
-      iconBgColor: "bg-green-900",
-      iconColor: "text-green-400",
-      trend: userProfile.lastMonthSavings.trend,
-      trendValue: `+12.5%`,
-      trendLabel: "vs last month",
-    },
-    {
-      id: 2,
-      title: "Avg. Monthly Transactions",
-      value: `$${userProfile.avgTransactionsPerMonth.toLocaleString()}`,
-      icon: BarChart2,
-      iconBgColor: "bg-blue-900",
-      iconColor: "text-blue-400",
-      trend: "up",
-      trendValue: "+5%",
-      trendLabel: "vs last month",
-    },
-    {
-      id: 3,
-      title: "Last Month Savings",
-      value: `$${userProfile.lastMonthSavings.value.toLocaleString()}`,
-      icon: userProfile.lastMonthSavings.trend === "up" ? TrendingUp : TrendingDown,
-      iconBgColor: "bg-purple-900",
-      iconColor: "text-purple-400",
-      trend: userProfile.lastMonthSavings.trend,
-      trendValue: `${userProfile.lastMonthSavings.trend === "up" ? "+" : "-"}${userProfile.lastMonthSavings.percentageChange}%`,
-      trendLabel: "vs previous month",
-    },
-    {
-      id: 4,
-      title: "Budget Limit",
-      value: userProfile.budgetLimit > 0 ? `$${userProfile.budgetLimit.toLocaleString()}` : "Not Set",
-      icon: Target,
-      iconBgColor: "bg-yellow-900",
-      iconColor: "text-yellow-400",
-      trend: "",
-      trendValue: "",
-      trendLabel: "",
-    },
-  ]
+  // ================= LOADING =================
+  if (loading || !userProfile) {
+    return (
+      <div className="p-6 text-white bg-black min-h-screen">
+        Loading profile...
+      </div>
+    )
+  }
 
+  // ================= UI =================
   return (
-    <div className="p-3 sm:p-4 md:p-6 lg:p-8 bg-black text-white space-y-8">
-      {/* ===== HEADER SECTION ===== */}
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+    <div className="p-6 bg-black text-white space-y-8">
+
+      {/* HEADER */}
+      <div className="flex justify-between items-center">
         <div>
-          <h1 className="text-3xl font-bold text-white">Profile</h1>
-          <p className="text-gray-300 text-sm">View and manage your personal and financial overview</p>
+          <h1 className="text-3xl font-bold">Profile</h1>
+          <p className="text-gray-400 text-sm">Manage your account</p>
         </div>
+
         <div className="flex gap-3">
-          {/* Replaced Settings button with Logout button */}
           <button
             onClick={handleLogout}
-            className="flex items-center gap-2 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors duration-200 font-medium"
+            className="px-4 py-2 bg-red-600 rounded-lg flex items-center gap-2"
           >
             <LogOut className="w-4 h-4" />
             Logout
           </button>
+
           <button
             onClick={handleEditProfile}
-            className="flex items-center gap-2 px-4 py-2 bg-[#4ADE80] text-black rounded-lg hover:bg-[#3BC470] transition-colors duration-200 font-medium"
+            className="px-4 py-2 bg-green-500 text-black rounded-lg flex items-center gap-2"
           >
             <Edit className="w-4 h-4" />
-            Edit Profile
+            Edit
           </button>
         </div>
       </div>
 
-      {/* ===== PROFILE OVERVIEW SECTION ===== */}
+      {/* PROFILE */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Profile Card */}
-        <Box title="Profile Information" className="lg:col-span-1 shadow-lg">
-          <div className="space-y-6">
-            {/* Profile Picture */}
-            <div className="flex flex-col items-center space-y-4">
-              <div className="relative">
-                <img
-                  src={userProfile.avatar || "/placeholder.svg?height=120&width=120"}
-                  alt={`${userProfile.name}'s profile`}
-                  className="w-24 h-24 rounded-full object-cover border-4 border-gray-600"
-                  onError={(e) => {
-                    e.target.src = "/placeholder.svg?height=120&width=120"
-                  }}
-                />
-                {/* Online Status */}
-                {userProfile.isOnline && (
-                  <div className="absolute bottom-1 right-1 w-6 h-6 bg-green-500 border-4 border-[#1C2C26] rounded-full"></div>
-                )}
-              </div>
-              <div className="text-center">
-                <h2 className="text-xl font-bold text-white">{userProfile.name}</h2>
-                <p className="text-sm text-gray-400">{userProfile.role}</p>
-              </div>
-            </div>
 
-            {/* Bio */}
-            {userProfile.bio && (
-              <div className="p-4 bg-gray-800/30 rounded-lg">
-                <h3 className="text-sm font-medium text-gray-300 mb-2">About</h3>
-                <p className="text-sm text-white leading-relaxed">{userProfile.bio}</p>
-              </div>
-            )}
-          </div>
+        <Box title="Profile">
+          <img
+            src={userProfile.avatar}
+            className="w-24 h-24 rounded-full mx-auto"
+          />
+          <h2 className="text-center mt-2 font-bold">{userProfile.name}</h2>
+          <p className="text-center text-gray-400">{userProfile.email}</p>
         </Box>
 
-        {/* Contact & Account Info */}
-        <Box title="Account Details" className="lg:col-span-2 shadow-lg">
-          <div className="grid grid-cols-1 md:grid-cols-1 gap-6">
-            {/* Email */}
-            <div className="flex items-center gap-3 p-4 bg-gray-800/30 rounded-lg">
-              <div className="h-10 w-10 flex items-center justify-center bg-blue-900 rounded-lg">
-                <Mail className="w-5 h-5 text-blue-400" />
-              </div>
-              <div className="flex-1">
-                <p className="text-xs text-gray-400 uppercase tracking-wide">Email</p>
-                <p className="text-sm font-medium text-white">{userProfile.email}</p>
-                {userProfile.emailVerified && (
-                  <p className="text-xs text-green-400 flex items-center gap-1">
-                    <Shield className="w-3 h-3" /> Verified
-                  </p>
-                )}
-              </div>
-            </div>
+        <Box title="Account Info" className="lg:col-span-2">
+          <p className="text-gray-300">{userProfile.bio}</p>
 
-            {/* Phone */}
-            <div className="flex items-center gap-3 p-4 bg-gray-800/30 rounded-lg">
-              <div className="h-10 w-10 flex items-center justify-center bg-green-900 rounded-lg">
-                <Phone className="w-5 h-5 text-green-400" />
-              </div>
-              <div className="flex-1">
-                <p className="text-xs text-gray-400 uppercase tracking-wide">Phone</p>
-                <p className="text-sm font-medium text-white">{userProfile.phone}</p>
-                {userProfile.phoneVerified && (
-                  <p className="text-xs text-green-400 flex items-center gap-1">
-                    <Shield className="w-3 h-3" /> Verified
-                  </p>
-                )}
-              </div>
-            </div>
-
-            {/* Join Date */}
-            <div className="flex items-center gap-3 p-4 bg-gray-800/30 rounded-lg">
-              <div className="h-10 w-10 flex items-center justify-center bg-orange-900 rounded-lg">
-                <Calendar className="w-5 h-5 text-orange-400" />
-              </div>
-              <div>
-                <p className="text-xs text-gray-400 uppercase tracking-wide">Member Since</p>
-                <p className="text-sm font-medium text-white">{userProfile.joinDate}</p>
-              </div>
-            </div>
+          <div className="mt-4 space-y-2 text-sm text-gray-400">
+            <p>📧 {userProfile.email}</p>
+            <p>📞 {userProfile.phone}</p>
+            <p>📅 {userProfile.joinDate}</p>
           </div>
         </Box>
       </div>
 
-      {/* ===== ACCOUNT STATISTICS ===== */}
-      <div>
-        <h2 className="text-xl font-bold  text-white mb-4">Account Statistics</h2>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 gap-4">
-          {profileStats.map((stat) => (
-            <StatBox
-              key={stat.id}
-              title={stat.title}
-              value={stat.value}
-              icon={stat.icon}
-              iconBgColor={stat.iconBgColor}
-              iconColor={stat.iconColor}
-              trend={stat.trend}
-              trendValue={stat.trendValue}
-              trendLabel={stat.trendLabel}
-              maxWidth="max-w-full"
-              className="shadow-lg"
-            />
-          ))}
+      {/* STATS */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        {stats.map((s) => (
+          <StatBox key={s.id} {...s} />
+        ))}
+      </div>
+
+      {/* GOALS (API READY) */}
+      <Box title="Financial Goals">
+        <div className="space-y-4">
+          {financialGoals.map((g, i) => {
+            const percent = (g.current / g.target) * 100
+
+            return (
+              <div key={i}>
+                <div className="flex justify-between text-sm">
+                  <span>{g.name}</span>
+                  <span>{percent.toFixed(0)}%</span>
+                </div>
+
+                <div className="w-full bg-gray-700 h-2 rounded">
+                  <div
+                    className="bg-green-500 h-2 rounded"
+                    style={{ width: `${percent}%` }}
+                  />
+                </div>
+              </div>
+            )
+          })}
         </div>
-      </div>
+      </Box>
 
+      {/* PREFS */}
+      <Box title="Preferences">
+        <div className="text-gray-300 space-y-2">
+          <p>Currency: {userProfile.currency}</p>
+          <p>Timezone: {userProfile.timezone}</p>
+        </div>
+      </Box>
 
-      <div className="grid grid-cols-1 lg:grid-cols-1 gap-6">
-        {/* Preferences - UPDATED */}
-        <Box title="Preferences" subtitle="Customize your experience" className="shadow-lg">
-          <div className="space-y-4">
-            <div className="flex items-center justify-between p-3 bg-gray-800/30 rounded-lg">
-              <div className="flex items-center gap-3">
-                <DollarSign className="w-5 h-5 text-green-400" />
-                <div>
-                  <p className="text-sm font-medium text-white">Currency</p>
-                  <p className="text-xs text-gray-400">Default currency for transactions</p>
-                </div>
-              </div>
-              <span className="text-sm text-gray-300">{userProfile.currency}</span>
-            </div>
-
-            {/* Budget Limit Setup - ADDED */}
-            <div className="flex items-center justify-between p-3 bg-gray-800/30 rounded-lg">
-              <div className="flex items-center gap-3">
-                <Target className="w-5 h-5 text-yellow-400" />
-                <div>
-                  <p className="text-sm font-medium text-white">Budget Limit</p>
-                  <p className="text-xs text-gray-400">Your monthly spending target</p>
-                </div>
-              </div>
-              <span className="text-sm text-gray-300">
-                {userProfile.budgetLimit > 0 ? `$${userProfile.budgetLimit.toLocaleString()}` : "Not Set"}
-              </span>
-            </div>
-
-            <div className="flex items-center justify-between p-3 bg-gray-800/30 rounded-lg">
-              <div className="flex items-center gap-3">
-                <Clock className="w-5 h-5 text-purple-400" />
-                <div>
-                  <p className="text-sm font-medium text-white">Timezone</p>
-                  <p className="text-xs text-gray-400">Your local timezone</p>
-                </div>
-              </div>
-              <span className="text-sm text-gray-300">{userProfile.timezone}</span>
-            </div>
-
-            <button
-              onClick={() => onNavigate("Settings")}
-              className="w-full text-sm text-[#4ADE80] hover:text-[#3BC470] font-medium transition py-2 hover:bg-gray-800 rounded-lg"
-            >
-              All Preferences
-            </button>
-          </div>
-        </Box>
-      </div>
     </div>
   )
 }

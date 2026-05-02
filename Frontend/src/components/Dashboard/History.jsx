@@ -1,188 +1,133 @@
-import { useState } from "react"
-import { Search, Download, ArrowUpDown, Eye } from "lucide-react"
+import { useState, useEffect, useMemo } from "react"
+import { Search, Download, Eye } from "lucide-react"
 import Box from "./Box"
+import { transactionAPI } from "../../api/api"
 
 function History({ onNavigate }) {
-  // Extended transactions data
-  const [allTransactions] = useState([
-    {
-      id: 1,
-      description: "Grocery Store",
-      amount: -85.5,
-      date: "2024-01-15",
-      time: "14:30",
-      category: "Food",
-      mode: "Card",
-      status: "Completed",
-    },
-    {
-      id: 2,
-      description: "Salary Deposit",
-      amount: 2500.0,
-      date: "2024-01-14",
-      time: "09:00",
-      category: "Income",
-      mode: "Bank Transfer",
-      status: "Completed",
-    },
-    {
-      id: 3,
-      description: "Gas Station",
-      amount: -45.2,
-      date: "2024-01-13",
-      time: "18:45",
-      category: "Transport",
-      mode: "Card",
-      status: "Completed",
-    },
-    {
-      id: 4,
-      description: "Netflix Subscription",
-      amount: -15.99,
-      date: "2024-01-12",
-      time: "12:00",
-      category: "Entertainment",
-      mode: "Card",
-      status: "Completed",
-    },
-    {
-      id: 5,
-      description: "Electric Bill",
-      amount: -120.0,
-      date: "2024-01-10",
-      time: "16:20",
-      category: "Utilities",
-      mode: "Net Banking",
-      status: "Completed",
-    },
-    {
-      id: 6,
-      description: "Coffee Shop",
-      amount: -12.5,
-      date: "2024-01-08",
-      time: "08:15",
-      category: "Food",
-      mode: "Cash",
-      status: "Completed",
-    },
-    {
-      id: 7,
-      description: "Freelance Payment",
-      amount: 800.0,
-      date: "2024-01-07",
-      time: "11:30",
-      category: "Income",
-      mode: "Bank Transfer",
-      status: "Completed",
-    },
-    {
-      id: 8,
-      description: "Restaurant Dinner",
-      amount: -65.0,
-      date: "2024-01-06",
-      time: "19:45",
-      category: "Food",
-      mode: "Card",
-      status: "Completed",
-    },
-    {
-      id: 9,
-      description: "Uber Ride",
-      amount: -18.5,
-      date: "2024-01-05",
-      time: "22:10",
-      category: "Transport",
-      mode: "Card",
-      status: "Completed",
-    },
-    {
-      id: 10,
-      description: "Online Shopping",
-      amount: -89.99,
-      date: "2024-01-04",
-      time: "15:20",
-      category: "Shopping",
-      mode: "Card",
-      status: "Completed",
-    },
-  ])
+
+  // ===== STATE =====
+  const [allTransactions, setAllTransactions] = useState([])
+  const [loading, setLoading] = useState(true)
 
   const [searchTerm, setSearchTerm] = useState("")
   const [selectedCategory, setSelectedCategory] = useState("all")
   const [sortBy, setSortBy] = useState("date")
   const [sortOrder, setSortOrder] = useState("desc")
 
-  // Filter and sort transactions
-  const filteredTransactions = allTransactions
-    .filter((transaction) => {
-      const matchesSearch = transaction.description.toLowerCase().includes(searchTerm.toLowerCase())
-      const matchesCategory =
-        selectedCategory === "all" || transaction.category.toLowerCase() === selectedCategory.toLowerCase()
-      return matchesSearch && matchesCategory
-    })
-    .sort((a, b) => {
-      let aValue, bValue
+  // ===== FETCH HISTORY =====
+  useEffect(() => {
+    const fetchHistory = async () => {
+      try {
+        const res = await transactionAPI.getHistory()
 
-      switch (sortBy) {
-        case "amount":
+        const mapped = (res?.data?.transactions || []).map((t) => ({
+          id: t.transaction_id,
+          description: t.title,
+          amount: t.type === "Income" ? +t.amount : -t.amount,
+          date: t.transaction_date?.split("T")[0],
+          time: new Date(t.transaction_date).toLocaleTimeString(),
+          category: t.category || "N/A",
+          mode: t.payment_method || "N/A",
+        }))
+
+        setAllTransactions(mapped)
+
+      } catch (err) {
+        console.error("History API error:", err?.message || err)
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    fetchHistory()
+  }, [])
+
+  // ===== FILTER + SORT =====
+  const filteredTransactions = useMemo(() => {
+    return allTransactions
+      .filter((t) => {
+        const matchesSearch = t.description
+          .toLowerCase()
+          .includes(searchTerm.toLowerCase())
+
+        const matchesCategory =
+          selectedCategory === "all" ||
+          t.category.toLowerCase() === selectedCategory.toLowerCase()
+
+        return matchesSearch && matchesCategory
+      })
+      .sort((a, b) => {
+        let aValue, bValue
+
+        if (sortBy === "amount") {
           aValue = Math.abs(a.amount)
           bValue = Math.abs(b.amount)
-          break
-        case "date":
+        } else if (sortBy === "date") {
           aValue = new Date(a.date + " " + a.time)
           bValue = new Date(b.date + " " + b.time)
-          break
-        case "category":
+        } else if (sortBy === "category") {
           aValue = a.category
           bValue = b.category
-          break
-        default:
+        } else {
           aValue = a.description
           bValue = b.description
-      }
+        }
 
-      if (sortOrder === "asc") {
-        return aValue > bValue ? 1 : -1
-      } else {
-        return aValue < bValue ? 1 : -1
-      }
-    })
+        return sortOrder === "asc"
+          ? aValue > bValue ? 1 : -1
+          : aValue < bValue ? 1 : -1
+      })
+  }, [allTransactions, searchTerm, selectedCategory, sortBy, sortOrder])
 
+  // ===== CATEGORIES =====
   const categories = ["all", "food", "transport", "entertainment", "utilities", "income", "shopping"]
 
+  // ===== EXPORT =====
   const handleExport = () => {
-    console.log("Exporting transaction history...")
-    // Add export logic here
+    console.log("Exporting history...")
   }
 
-  const toggleSort = (field) => {
-    if (sortBy === field) {
-      setSortOrder(sortOrder === "asc" ? "desc" : "asc")
-    } else {
-      setSortBy(field)
-      setSortOrder("desc")
-    }
+  // ===== LOADING =====
+  if (loading) {
+    return <div className="p-6 text-white">Loading history...</div>
   }
 
+  // ===== SUMMARY =====
+  const incomeTotal = filteredTransactions
+    .filter((t) => t.amount > 0)
+    .reduce((sum, t) => sum + t.amount, 0)
+
+  const expenseTotal = filteredTransactions
+    .filter((t) => t.amount < 0)
+    .reduce((sum, t) => sum + t.amount, 0)
+
+  const net = incomeTotal + expenseTotal
+
+  // ===== UI =====
   return (
     <div className="p-3 sm:p-4 md:p-6 lg:p-8 bg-black text-white space-y-6">
-      {/* ===== HEADER SECTION ===== */}
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+
+      {/* HEADER */}
+      <div className="flex flex-col sm:flex-row justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold text-white">Transaction History</h1>
-          <p className="text-gray-300 text-sm">Complete history of your financial transactions</p>
+          <h1 className="text-3xl font-bold">Transaction History</h1>
+          <p className="text-gray-300 text-sm">
+            Complete history of your financial transactions
+          </p>
         </div>
+
         <div className="flex gap-3">
           <button
             onClick={() => onNavigate("Transactions")}
-            className="px-4 py-2 bg-gray-700 text-white rounded-lg hover:bg-gray-600 transition-colors duration-200 flex items-center gap-2"
+            className="px-4 py-2 bg-gray-700 rounded-lg hover:bg-gray-600 flex items-center gap-2"
           >
             <Eye className="w-4 h-4" />
-            Back to Transactions
+            Back
           </button>
+
           <button
             onClick={handleExport}
-            className="px-4 py-2 bg-[#4ADE80] text-black rounded-lg hover:bg-[#3BC470] transition-colors duration-200 flex items-center gap-2"
+            className="px-4 py-2 bg-[#4ADE80] text-black rounded-lg hover:bg-[#3BC470] flex items-center gap-2"
           >
             <Download className="w-4 h-4" />
             Export
@@ -190,152 +135,126 @@ function History({ onNavigate }) {
         </div>
       </div>
 
-      
-      {/* ===== SUMMARY SECTION ===== */}
+      {/* SUMMARY */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <Box title="Total Income" className="shadow-lg">
-          <div className="text-2xl font-bold text-green-400">
-            +$
-            {filteredTransactions
-              .filter((t) => t.amount > 0)
-              .reduce((sum, t) => sum + t.amount, 0)
-              .toFixed(2)}
+
+        <Box title="Total Income">
+          <div className="text-2xl text-green-400 font-bold">
+            +${incomeTotal.toFixed(2)}
           </div>
         </Box>
-        <Box title="Total Expenses" className="shadow-lg">
-          <div className="text-2xl font-bold text-red-400">
-            -$
-            {Math.abs(filteredTransactions.filter((t) => t.amount < 0).reduce((sum, t) => sum + t.amount, 0)).toFixed(
-              2,
-            )}
+
+        <Box title="Total Expenses">
+          <div className="text-2xl text-red-400 font-bold">
+            -${Math.abs(expenseTotal).toFixed(2)}
           </div>
         </Box>
-        <Box title="Net Amount" className="shadow-lg">
-          <div className="text-2xl font-bold text-blue-400">
-            ${filteredTransactions.reduce((sum, t) => sum + t.amount, 0).toFixed(2)}
+
+        <Box title="Net Amount">
+          <div className="text-2xl text-blue-400 font-bold">
+            ${net.toFixed(2)}
           </div>
         </Box>
+
       </div>
 
-      {/* ===== FILTERS SECTION ===== */}
-      <Box title="Filters & Search" className="shadow-lg">
+      {/* FILTERS */}
+      <Box title="Filters & Search">
+
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          {/* Search */}
+
+          {/* SEARCH */}
           <div className="relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+            <Search className="absolute left-3 top-3 text-gray-400 w-4 h-4" />
             <input
-              type="text"
-              placeholder="Search transactions..."
+              className="w-full pl-10 p-3 bg-gray-800 rounded text-white"
+              placeholder="Search..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pl-10 pr-4 py-3 bg-gray-800 text-white rounded-lg border border-gray-600 focus:ring-2 focus:ring-[#4ADE80] focus:outline-none"
             />
           </div>
 
-          {/* Category Filter */}
+          {/* CATEGORY */}
           <select
+            className="bg-gray-800 p-3 rounded"
             value={selectedCategory}
             onChange={(e) => setSelectedCategory(e.target.value)}
-            className="w-full px-4 py-3 bg-gray-800 text-white rounded-lg border border-gray-600 focus:ring-2 focus:ring-[#4ADE80] focus:outline-none capitalize"
           >
-            {categories.map((category) => (
-              <option key={category} value={category}>
-                {category === "all" ? "All Categories" : category}
+            {categories.map((c) => (
+              <option key={c} value={c}>
+                {c}
               </option>
             ))}
           </select>
 
-          {/* Sort Options */}
+          {/* SORT */}
           <div className="flex gap-2">
             <select
+              className="flex-1 bg-gray-800 p-3 rounded"
               value={sortBy}
               onChange={(e) => setSortBy(e.target.value)}
-              className="flex-1 px-4 py-3 bg-gray-800 text-white rounded-lg border border-gray-600 focus:ring-2 focus:ring-[#4ADE80] focus:outline-none"
             >
-              <option value="date">Sort by Date</option>
-              <option value="amount">Sort by Amount</option>
-              <option value="category">Sort by Category</option>
-              <option value="description">Sort by Description</option>
+              <option value="date">Date</option>
+              <option value="amount">Amount</option>
+              <option value="category">Category</option>
+              <option value="description">Description</option>
             </select>
+
             <button
-              onClick={() => setSortOrder(sortOrder === "asc" ? "desc" : "asc")}
-              className="px-3 py-3 bg-gray-700 text-white rounded-lg hover:bg-gray-600 transition-colors duration-200"
+              onClick={() =>
+                setSortOrder((prev) => (prev === "asc" ? "desc" : "asc"))
+              }
+              className="px-3 bg-gray-700 rounded"
             >
-              <ArrowUpDown className="w-4 h-4" />
+              ⇅
             </button>
           </div>
+
         </div>
+
       </Box>
 
-      {/* ===== TRANSACTIONS TABLE ===== */}
-      <Box title={`Transaction History (${filteredTransactions.length})`} className="shadow-lg">
+      {/* TABLE */}
+      <Box title={`Transactions (${filteredTransactions.length})`}>
+
         <div className="overflow-x-auto">
+
           <table className="w-full">
+
             <thead>
-              <tr className="border-b border-gray-700">
-                <th
-                  className="text-left py-3 px-2 text-gray-300 font-medium cursor-pointer hover:text-white"
-                  onClick={() => toggleSort("description")}
-                >
-                  Description
-                </th>
-                <th
-                  className="text-left py-3 px-2 text-gray-300 font-medium cursor-pointer hover:text-white"
-                  onClick={() => toggleSort("category")}
-                >
-                  Category
-                </th>
-                <th
-                  className="text-left py-3 px-2 text-gray-300 font-medium cursor-pointer hover:text-white"
-                  onClick={() => toggleSort("date")}
-                >
-                  Date & Time
-                </th>
-                <th className="text-left py-3 px-2 text-gray-300 font-medium">Mode</th>
-                <th
-                  className="text-right py-3 px-2 text-gray-300 font-medium cursor-pointer hover:text-white"
-                  onClick={() => toggleSort("amount")}
-                >
-                  Amount
-                </th>
-                <th className="text-center py-3 px-2 text-gray-300 font-medium">Status</th>
+              <tr className="border-b border-gray-700 text-left text-gray-400">
+                <th>Description</th>
+                <th>Category</th>
+                <th>Date</th>
+                <th>Mode</th>
+                <th className="text-right">Amount</th>
               </tr>
             </thead>
+
             <tbody>
-              {filteredTransactions.map((transaction) => (
-                <tr key={transaction.id} className="border-b border-gray-800 hover:bg-gray-800/30 transition-colors">
-                  <td className="py-4 px-2">
-                    <div className="font-medium text-white">{transaction.description}</div>
-                  </td>
-                  <td className="py-4 px-2">
-                    <span className="px-2 py-1 bg-gray-700 text-gray-300 rounded-full text-xs capitalize">
-                      {transaction.category}
-                    </span>
-                  </td>
-                  <td className="py-4 px-2 text-gray-300 text-sm">
-                    <div>{transaction.date}</div>
-                    <div className="text-xs text-gray-400">{transaction.time}</div>
-                  </td>
-                  <td className="py-4 px-2 text-gray-300 text-sm">{transaction.mode}</td>
-                  <td className="py-4 px-2 text-right">
-                    <span className={`font-semibold ${transaction.amount > 0 ? "text-green-400" : "text-red-400"}`}>
-                      {transaction.amount > 0 ? "+" : "-"}${Math.abs(transaction.amount).toFixed(2)}
-                    </span>
-                  </td>
-                  <td className="py-4 px-2 text-center">
-                    <span className="px-2 py-1 bg-green-900/30 text-green-400 rounded-full text-xs">
-                      {transaction.status}
-                    </span>
+              {filteredTransactions.map((t) => (
+                <tr key={t.id} className="border-b border-gray-800">
+                  <td>{t.description}</td>
+                  <td>{t.category}</td>
+                  <td>{t.date}</td>
+                  <td>{t.mode}</td>
+                  <td className={`text-right ${t.amount > 0 ? "text-green-400" : "text-red-400"}`}>
+                    {t.amount > 0 ? "+" : "-"}${Math.abs(t.amount).toFixed(2)}
                   </td>
                 </tr>
               ))}
             </tbody>
+
           </table>
 
-          {filteredTransactions.length === 0 && (
-            <div className="text-center py-8 text-gray-400">No transactions found matching your criteria.</div>
-          )}
         </div>
+
+        {filteredTransactions.length === 0 && (
+          <div className="text-center py-6 text-gray-400">
+            No transactions found
+          </div>
+        )}
+
       </Box>
 
     </div>

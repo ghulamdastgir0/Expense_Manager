@@ -1,4 +1,5 @@
 "use client"
+
 import { useState, useEffect } from "react"
 import {
   Tag,
@@ -21,11 +22,14 @@ import {
   Save,
   X,
 } from "lucide-react"
+
 import InputField from "../auth/inputField"
 import Box from "./Box"
 
 function AddTransaction({ preSelectedType = "expense" }) {
-  // ===== STATE MANAGEMENT =====
+  const API = "http://localhost:5000/api"
+
+  // ===== STATE =====
   const [formData, setFormData] = useState({
     title: "",
     type: preSelectedType,
@@ -36,10 +40,13 @@ function AddTransaction({ preSelectedType = "expense" }) {
     mode: "",
   })
 
-  const [errors, setErrors] = useState({})
-  const [budgetLimit, setBudgetLimit] = useState(1000) // Placeholder: User can set this in settings
-  const [baseMonthExpenses, setBaseMonthExpenses] = useState(750) // Placeholder: This would come from actual transactions already recorded
+  const [loading, setLoading] = useState(false)
 
+  // budget (static for now — can be API later)
+  const budgetLimit = 1000
+  const baseMonthExpenses = 750
+
+  // sync type
   useEffect(() => {
     setFormData((prev) => ({
       ...prev,
@@ -47,93 +54,55 @@ function AddTransaction({ preSelectedType = "expense" }) {
     }))
   }, [preSelectedType])
 
-  // Calculate current expenses including the amount being entered
-  const currentExpensesWithNewAmount =
-    baseMonthExpenses +
-    (formData.type === "expense" && !isNaN(Number.parseFloat(formData.amount)) ? Number.parseFloat(formData.amount) : 0)
-  const budgetPercentage = budgetLimit > 0 ? (currentExpensesWithNewAmount / budgetLimit) * 100 : 0
+  // optional API (safe)
+  useEffect(() => {
+    const fetchSettings = async () => {
+      try {
+        const res = await fetch(`${API}/settings`)
+        const data = await res.json()
+        // optional override if backend sends it
+        if (data?.budgetLimit) {
+          // no state needed (kept simple)
+        }
+      } catch {
+        // silent fail
+      }
+    }
 
-  // ===== DATA ARRAYS =====
+    fetchSettings()
+  }, [])
 
-  // Transaction types with icons
-  const transactionTypes = [
-    { value: "expense", label: "Expense", icon: TrendingDown, color: "text-red-500" },
-    { value: "income", label: "Income", icon: TrendingUp, color: "text-green-400" },
-  ]
+  // ===== CALCULATIONS =====
+  const currentAmount =
+    formData.type === "expense" && formData.amount
+      ? Number(formData.amount)
+      : 0
 
-  // Categories with icons
-  const categories = [
-    { value: "food", label: "Food", icon: Utensils },
-    { value: "fuel", label: "Fuel", icon: Car },
-    { value: "clothing", label: "Clothing", icon: Shirt },
-    { value: "medical", label: "Medical", icon: Heart },
-    { value: "loan", label: "Loan", icon: Building },
-    { value: "transport", label: "Transport", icon: Plane },
-    { value: "salary", label: "Salary", icon: Briefcase },
-    { value: "fun", label: "Fun", icon: Gamepad2 },
-    { value: "personal", label: "Personal", icon: User },
-    { value: "other", label: "Other", icon: MoreHorizontal },
-  ]
+  const totalExpense = baseMonthExpenses + currentAmount
+  const budgetPercentage =
+    budgetLimit > 0 ? (totalExpense / budgetLimit) * 100 : 0
 
-  // Payment modes with icons
-  const paymentModes = [
-    { value: "cash", label: "Cash", icon: Banknote },
-    { value: "card", label: "Card", icon: CreditCard },
-    { value: "netbanking", label: "Net Banking", icon: Smartphone },
-    { value: "cheque", label: "Cheque", icon: FileText },
-  ]
-
-  // ===== EVENT HANDLERS =====
-
+  // ===== HANDLERS =====
   const handleInputChange = (field, value) => {
     setFormData((prev) => ({
       ...prev,
       [field]: value,
     }))
-
-    if (errors[field]) {
-      setErrors((prev) => ({
-        ...prev,
-        [field]: "",
-      }))
-    }
   }
 
-  const validateForm = () => {
-    const newErrors = {}
-
-    if (!formData.title.trim()) newErrors.title = "Title is required"
-    if (!formData.amount.trim()) {
-      newErrors.amount = "Amount is required"
-    } else {
-      const amount = Number.parseFloat(formData.amount)
-      if (isNaN(amount)) {
-        newErrors.amount = "Please enter a valid amount"
-      } else if (amount <= 0) {
-        newErrors.amount = "Amount must be greater than zero"
-      } else if (amount < 0) {
-        newErrors.amount = "Amount cannot be negative"
-      }
-    }
-    if (!formData.date) newErrors.date = "Date is required"
-    if (!formData.time) newErrors.time = "Time is required"
-    if (!formData.category) newErrors.category = "Category is required"
-    if (!formData.mode) newErrors.mode = "Payment mode is required"
-
-    setErrors(newErrors)
-    return Object.keys(newErrors).length === 0
-  }
-
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault()
+    setLoading(true)
 
-    if (validateForm()) {
-      console.log("Transaction Data:", formData)
+    try {
+      await fetch(`${API}/transactions`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(formData),
+      })
 
-      alert(`${formData.type === "income" ? "Income" : "Expense"} transaction added successfully!`)
+      alert("Transaction added successfully!")
 
-      // In a real app, you would update baseMonthExpenses here after successful submission
-      // For this example, we'll just reset the form
       setFormData({
         title: "",
         type: preSelectedType,
@@ -143,6 +112,10 @@ function AddTransaction({ preSelectedType = "expense" }) {
         category: "",
         mode: "",
       })
+    } catch {
+      alert("Failed to add transaction")
+    } finally {
+      setLoading(false)
     }
   }
 
@@ -156,319 +129,176 @@ function AddTransaction({ preSelectedType = "expense" }) {
       category: "",
       mode: "",
     })
-    setErrors({})
   }
 
   const getCurrentDateTime = () => {
     const now = new Date()
-    const date = now.toISOString().split("T")[0]
-    const time = now.toTimeString().slice(0, 5)
 
     setFormData((prev) => ({
       ...prev,
-      date,
-      time,
+      date: now.toISOString().split("T")[0],
+      time: now.toTimeString().slice(0, 5),
     }))
   }
 
+  // ===== DATA =====
+  const transactionTypes = [
+    { value: "expense", label: "Expense", icon: TrendingDown, color: "text-red-500" },
+    { value: "income", label: "Income", icon: TrendingUp, color: "text-green-400" },
+  ]
+
+  const categories = [
+    { value: "food", label: "Food", icon: Utensils },
+    { value: "fuel", label: "Fuel", icon: Car },
+    { value: "clothing", label: "Clothing", icon: Shirt },
+    { value: "medical", label: "Medical", icon: Heart },
+    { value: "loan", label: "Loan", icon: Building },
+    { value: "transport", label: "Transport", icon: Plane },
+    { value: "salary", label: "Salary", icon: Briefcase },
+    { value: "fun", label: "Fun", icon: Gamepad2 },
+    { value: "personal", label: "Personal", icon: User },
+    { value: "other", label: "Other", icon: MoreHorizontal },
+  ]
+
+  const paymentModes = [
+    { value: "cash", label: "Cash", icon: Banknote },
+    { value: "card", label: "Card", icon: CreditCard },
+    { value: "netbanking", label: "Net Banking", icon: Smartphone },
+    { value: "cheque", label: "Cheque", icon: FileText },
+  ]
+
+  // ===== UI =====
   return (
-    <div className="min-h-screen bg-black p-4 md:p-8">
+    <div className="min-h-screen bg-black p-4 md:p-8 text-white">
       <div className="max-w-4xl mx-auto space-y-8">
-        {/* ===== HEADER SECTION ===== */}
-        <div className="text-center space-y-2">
-          <h1 className="text-3xl font-bold text-white">
-            Add {formData.type === "income" ? "Income" : "Expense"} Transaction
+
+        {/* HEADER */}
+        <div className="text-center">
+          <h1 className="text-3xl font-bold">
+            Add {formData.type === "income" ? "Income" : "Expense"}
           </h1>
-          <p className="text-gray-300">
-            Record your {formData.type === "income" ? "income" : "expense"} transaction details
-          </p>
         </div>
 
-        {/* ===== MAIN FORM SECTION ===== */}
-        <Box className="max-w-2xl mx-auto">
+        <Box>
           <form onSubmit={handleSubmit} className="space-y-6">
-            {/* Transaction Type Selection */}
-            <div>
-              <label className="block text-sm font-medium text-gray-300 mb-2">Transaction Type</label>
-              <div className="grid grid-cols-2 gap-4 p-4 bg-gray-800/30 rounded-lg">
-                {transactionTypes.map((type) => (
-                  <button
-                    key={type.value}
-                    type="button"
-                    onClick={() => handleInputChange("type", type.value)}
-                    className={`flex items-center justify-center gap-3 p-4 rounded-lg border-2 transition-all duration-200 ${
-                      formData.type === type.value
-                        ? "border-[#4ADE80] bg-[#4ADE80]/10"
-                        : "border-gray-600 hover:border-gray-500"
-                    }`}
-                  >
-                    <type.icon
-                      className={`w-5 h-5 ${formData.type === type.value && type.value === "expense" ? "text-red-500" : formData.type === type.value && type.value === "income" ? "text-[#4ADE80]" : type.color}`}
-                    />
-                    <span
-                      className={`font-medium ${formData.type === type.value && type.value === "expense" ? "text-red-500" : formData.type === type.value && type.value === "income" ? "text-[#4ADE80]" : "text-white"}`}
-                    >
-                      {type.label}
-                    </span>
-                  </button>
-                ))}
-              </div>
+
+            {/* TYPE */}
+            <div className="grid grid-cols-2 gap-4">
+              {transactionTypes.map((t) => (
+                <button
+                  key={t.value}
+                  type="button"
+                  onClick={() => handleInputChange("type", t.value)}
+                  className="p-3 bg-gray-800 rounded flex items-center gap-2"
+                >
+                  <t.icon size={18} />
+                  {t.label}
+                </button>
+              ))}
             </div>
 
-            {/* Budget Limit Usage Bar (only for expenses) */}
-            {formData.type === "expense" && (
-              <Box className="max-w-2xl mx-auto">
-                <div className="space-y-4">
-                  <h3 className="text-lg font-semibold text-white">Budget Usage</h3>
-                  {budgetLimit > 0 ? (
-                    <>
-                      <div className="flex justify-between text-sm">
-                        <span className="text-white">Budget Limit: ${budgetLimit.toFixed(2)}</span>
-                        <span className="text-gray-400">Spent: ${currentExpensesWithNewAmount.toFixed(2)}</span>
-                      </div>
-                      <div className="w-full bg-gray-700 rounded-full h-3">
-                        <div
-                          className={`h-3 rounded-full transition-all duration-500 ${
-                            budgetPercentage > 100
-                              ? "bg-red-500"
-                              : budgetPercentage >= 80
-                                ? "bg-orange-500"
-                                : "bg-[#4ADE80]"
-                          }`}
-                          style={{ width: `${Math.min(100, budgetPercentage)}%` }}
-                        ></div>
-                      </div>
-                      <p className={`text-xs mt-1 ${budgetPercentage > 100 ? "text-red-400" : "text-gray-400"}`}>
-                        {budgetPercentage > 100
-                          ? `Exceeded budget limit by $${(currentExpensesWithNewAmount - budgetLimit).toFixed(2)}`
-                          : budgetPercentage === 100
-                            ? "Reached budget limit"
-                            : `${Math.round(budgetPercentage)}% of budget used`}
-                      </p>
-                    </>
-                  ) : (
-                    <p className="text-gray-400 text-sm">No budget limit added. Set one in Settings to track usage.</p>
-                  )}
-                </div>
-              </Box>
-            )}
-
-            {/* Title Field - Using your InputField component */}
+            {/* TITLE */}
             <InputField
-              label={`${formData.type === "income" ? "Income" : "Expense"} Title`}
-              type="text"
-              id="title"
-              placeholder={
-                formData.type === "income"
-                  ? "e.g., Salary payment, Freelance work, Investment return"
-                  : "e.g., Grocery shopping, Utility bill, Transportation"
-              }
+              label="Title"
               value={formData.title}
               onChange={(e) => handleInputChange("title", e.target.value)}
-              required
             />
-            {errors.title && <p className="text-red-400 text-sm mt-1">{errors.title}</p>}
 
-            
-
-            {/* Amount Field - Using your InputField component */}
+            {/* AMOUNT */}
             <InputField
               label="Amount"
               type="number"
-              id="amount"
-              placeholder="0.00"
-              min="0.01"
-              step="0.01"
               value={formData.amount}
               onChange={(e) => handleInputChange("amount", e.target.value)}
-              required
             />
-            {errors.amount && <p className="text-red-400 text-sm mt-1">{errors.amount}</p>}
 
-            
-
-            {/* Date Field - Using your InputField component */}
+            {/* DATE */}
             <InputField
               label="Date"
               type="date"
-              id="date"
               value={formData.date}
               onChange={(e) => handleInputChange("date", e.target.value)}
-              required
             />
-            {errors.date && <p className="text-red-400 text-sm mt-1">{errors.date}</p>}
 
-            {/* Time Field - Using your InputField component with custom button */}
-            <div>
-              <InputField
-                label="Time"
-                type="time"
-                id="time"
-                value={formData.time}
-                onChange={(e) => handleInputChange("time", e.target.value)}
-                required
-              />
-              <button
-                type="button"
-                onClick={getCurrentDateTime}
-                className="mt-2 px-4 py-2 bg-[#4ADE80] text-black rounded-lg hover:bg-[#3BC470] transition-colors font-medium text-sm"
-              >
-                Set Current Date & Time
-              </button>
-              {errors.time && <p className="text-red-400 text-sm mt-1">{errors.time}</p>}
+            {/* TIME */}
+            <InputField
+              label="Time"
+              type="time"
+              value={formData.time}
+              onChange={(e) => handleInputChange("time", e.target.value)}
+            />
+
+            <button
+              type="button"
+              onClick={getCurrentDateTime}
+              className="bg-gray-700 px-3 py-2 rounded"
+            >
+              Use Current Time
+            </button>
+
+            {/* CATEGORY */}
+            <div className="grid grid-cols-3 gap-2">
+              {categories.map((c) => (
+                <button
+                  key={c.value}
+                  type="button"
+                  onClick={() => handleInputChange("category", c.value)}
+                  className="p-2 bg-gray-800 rounded flex items-center gap-2"
+                >
+                  <c.icon size={16} />
+                  {c.label}
+                </button>
+              ))}
             </div>
 
-            {/* Category Selection */}
-            <div className="space-y-2">
-              <label className="block text-sm font-medium text-gray-300 mb-2">
-                <div className="flex items-center gap-2">
-                  <Tag className="w-4 h-4" />
-                  Category
-                </div>
-              </label>
-              <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
-                {categories.map((category) => (
-                  <button
-                    key={category.value}
-                    type="button"
-                    onClick={() => handleInputChange("category", category.value)}
-                    className={`flex flex-col items-center gap-2 p-3 rounded-lg border-2 transition-all duration-200 ${
-                      formData.category === category.value
-                        ? "border-[#4ADE80] bg-[#4ADE80]/10"
-                        : "border-gray-600 hover:border-gray-500"
-                    }`}
-                  >
-                    <category.icon
-                      className={`w-5 h-5 ${formData.category === category.value ? "text-[#4ADE80]" : "text-gray-400"}`}
-                    />
-                    <span
-                      className={`text-xs font-medium ${
-                        formData.category === category.value ? "text-[#4ADE80]" : "text-white"
-                      }`}
-                    >
-                      {category.label}
-                    </span>
-                  </button>
-                ))}
-              </div>
-              {errors.category && <p className="text-red-400 text-sm mt-1">{errors.category}</p>}
+            {/* MODE */}
+            <div className="grid grid-cols-2 gap-2">
+              {paymentModes.map((m) => (
+                <button
+                  key={m.value}
+                  type="button"
+                  onClick={() => handleInputChange("mode", m.value)}
+                  className="p-2 bg-gray-800 rounded flex items-center gap-2"
+                >
+                  <m.icon size={16} />
+                  {m.label}
+                </button>
+              ))}
             </div>
 
-            {/* Payment Mode Selection */}
-            <div className="space-y-2">
-              <label className="block text-sm font-medium text-gray-300 mb-2">
-                <div className="flex items-center gap-2">
-                  <CreditCard className="w-4 h-4" />
-                  Payment Mode
-                </div>
-              </label>
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                {paymentModes.map((mode) => (
-                  <button
-                    key={mode.value}
-                    type="button"
-                    onClick={() => handleInputChange("mode", mode.value)}
-                    className={`flex flex-col items-center gap-2 p-4 rounded-lg border-2 transition-all duration-200 ${
-                      formData.mode === mode.value
-                        ? "border-[#4ADE80] bg-[#4ADE80]/10"
-                        : "border-gray-600 hover:border-gray-500"
-                    }`}
-                  >
-                    <mode.icon
-                      className={`w-5 h-5 ${formData.mode === mode.value ? "text-[#4ADE80]" : "text-gray-400"}`}
-                    />
-                    <span
-                      className={`text-sm font-medium ${
-                        formData.mode === mode.value ? "text-[#4ADE80]" : "text-white"
-                      }`}
-                    >
-                      {mode.label}
-                    </span>
-                  </button>
-                ))}
-              </div>
-              {errors.mode && <p className="text-red-400 text-sm mt-1">{errors.mode}</p>}
-            </div>
-
-            {/* Action Buttons */}
-            <div className="flex gap-4 pt-6">
+            {/* ACTIONS */}
+            <div className="flex gap-4">
               <button
                 type="submit"
-                className="flex-1 flex items-center justify-center gap-2 bg-[#4ADE80] text-black font-semibold py-3 px-6 rounded-lg hover:bg-[#3BC470] transition-colors duration-200"
+                disabled={loading}
+                className="bg-green-500 text-black px-4 py-2 rounded flex items-center gap-2"
               >
-                <Save className="w-5 h-5" />
-                Add {formData.type === "income" ? "Income" : "Expense"}
+                <Save size={18} />
+                {loading ? "Saving..." : "Save"}
               </button>
 
               <button
                 type="button"
                 onClick={handleReset}
-                className="flex items-center justify-center gap-2 bg-gray-700 text-white font-semibold py-3 px-6 rounded-lg hover:bg-gray-600 transition-colors duration-200"
+                className="bg-gray-700 px-4 py-2 rounded flex items-center gap-2"
               >
-                <X className="w-5 h-5" />
+                <X size={18} />
                 Reset
               </button>
             </div>
+
           </form>
         </Box>
 
-        {/* ===== PREVIEW SECTION ===== */}
-        {(formData.title || formData.amount) && (
-          <Box title="Transaction Preview" subtitle="Review your transaction details" className="max-w-2xl mx-auto">
-            <div className="space-y-3">
-              <div className="flex justify-between items-center p-3 bg-gray-800/30 rounded-lg">
-                <span className="text-gray-300">Type:</span>
-                <div className="flex items-center gap-2">
-                  {formData.type === "income" ? (
-                    <TrendingUp className="w-4 h-4 text-green-400" />
-                  ) : (
-                    <TrendingDown className="w-4 h-4 text-red-400" />
-                  )}
-                  <span className={`font-medium ${formData.type === "income" ? "text-green-400" : "text-red-400"}`}>
-                    {formData.type.charAt(0).toUpperCase() + formData.type.slice(1)}
-                  </span>
-                </div>
-              </div>
-
-              {formData.title && (
-                <div className="flex justify-between items-center p-3 bg-gray-800/30 rounded-lg">
-                  <span className="text-gray-300">Title:</span>
-                  <span className="text-white font-medium">{formData.title}</span>
-                </div>
-              )}
-
-              {formData.amount && (
-                <div className="flex justify-between items-center p-3 bg-gray-800/30 rounded-lg">
-                  <span className="text-gray-300">Amount:</span>
-                  <span className="text-[#4ADE80] font-bold text-lg">${formData.amount}</span>
-                </div>
-              )}
-
-              {(formData.date || formData.time) && (
-                <div className="flex justify-between items-center p-3 bg-gray-800/30 rounded-lg">
-                  <span className="text-gray-300">Date & Time:</span>
-                  <span className="text-white">
-                    {formData.date} {formData.time}
-                  </span>
-                </div>
-              )}
-
-              {formData.category && (
-                <div className="flex justify-between items-center p-3 bg-gray-800/30 rounded-lg">
-                  <span className="text-gray-300">Category:</span>
-                  <span className="text-white capitalize">{formData.category}</span>
-                </div>
-              )}
-
-              {formData.mode && (
-                <div className="flex justify-between items-center p-3 bg-gray-800/30 rounded-lg">
-                  <span className="text-gray-300">Payment Mode:</span>
-                  <span className="text-white capitalize">{formData.mode}</span>
-                </div>
-              )}
-            </div>
+        {/* BUDGET */}
+        {formData.type === "expense" && (
+          <Box>
+            <p>Budget Limit: {budgetLimit}</p>
+            <p>Spent: {totalExpense}</p>
+            <p>{Math.round(budgetPercentage)}% used</p>
           </Box>
         )}
+
       </div>
     </div>
   )
