@@ -95,7 +95,7 @@ const getDashboardSummary = async (req, res) => {
           is_exceeded: currentExpenses > budgetLimit && budgetLimit > 0,
         },
         top_expenses: topExpensesResult.rows.map((row) => ({
-          category: row.category,
+          category: row.category || row.category_name || "Unknown",
           expenses: parseFloat(row.total_spent),
         })),
         recent_transactions: recentResult.rows,
@@ -117,38 +117,45 @@ const getBudgetAlert = async (req, res) => {
 
   try {
     const [accountResult, balanceResult] = await Promise.all([
-      pool.query("SELECT budget_limit FROM accountdetail WHERE user_id = $1", [userId]),
+      pool.query(
+        `SELECT ad.budget_limit, c.symbol AS currency_symbol
+         FROM accountdetail ad
+         LEFT JOIN currency c ON ad.currency_id = c.currency_id
+         WHERE ad.user_id = $1`,
+        [userId]
+      ),
       pool.query("SELECT expenses FROM balance_detail WHERE user_id = $1", [userId]),
-    ]);
+    ])
 
-    const budgetLimit = parseFloat(accountResult.rows[0]?.budget_limit) || 0;
-    const expenses = parseFloat(balanceResult.rows[0]?.expenses) || 0;
+    const budgetLimit      = parseFloat(accountResult.rows[0]?.budget_limit) || 0
+    const currencySymbol   = accountResult.rows[0]?.currency_symbol || "$"
+    const expenses         = parseFloat(balanceResult.rows[0]?.expenses) || 0
 
-    let alertLevel = "safe"; // safe | warning | exceeded
+    let alertLevel = "safe"
     if (budgetLimit > 0) {
-      const percentage = (expenses / budgetLimit) * 100;
-      if (percentage >= 100) alertLevel = "exceeded";
-      else if (percentage >= 80) alertLevel = "warning";
+      const percentage = (expenses / budgetLimit) * 100
+      if (percentage >= 100) alertLevel = "exceeded"
+      else if (percentage >= 80) alertLevel = "warning"
     }
 
     return res.json({
       success: true,
       data: {
-        budget_limit: budgetLimit,
-        current_expenses: expenses,
-        alert_level: alertLevel,
+        budget_limit:      budgetLimit,
+        current_expenses:  expenses,
+        alert_level:       alertLevel,
         message:
           alertLevel === "exceeded"
-            ? `Budget exceeded by $${(expenses - budgetLimit).toFixed(2)}`
+            ? `Budget exceeded by ${currencySymbol}${(expenses - budgetLimit).toFixed(2)}`
             : alertLevel === "warning"
             ? `Warning: ${((expenses / budgetLimit) * 100).toFixed(0)}% of budget used`
             : "Budget is under control",
       },
-    });
+    })
   } catch (err) {
-    console.error("Budget alert error:", err);
-    return res.status(500).json({ success: false, message: "Server error" });
+    console.error("Budget alert error:", err)
+    return res.status(500).json({ success: false, message: "Server error" })
   }
-};
+}
 
 export { getDashboardSummary, getBudgetAlert };

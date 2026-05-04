@@ -5,7 +5,7 @@
 // ============================================================
 
 import { Router } from "express";
-import { verifyToken } from "../Auth/authMiddleware.js";
+import { verifyToken } from "../Middlewares/authMiddleware.js";
 import {
   addTransaction,
   getRecentTransactions,

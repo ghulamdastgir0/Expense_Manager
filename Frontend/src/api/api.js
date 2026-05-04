@@ -82,24 +82,34 @@ export const transactionAPI = {
 export const dashboardAPI = {
   getSummary: () => apiFetch("/dashboard/summary"),
   getBudgetAlert: () => apiFetch("/dashboard/budget-alert"),
+  getStats: () => apiFetch("/dashboard/stats"),
 }
 
 // ============================================================
 // REPORTS
 // ============================================================
 export const reportAPI = {
-  monthly: (month) => apiFetch(`/reports/monthly?month=${month}`),
-  daily: (date) => apiFetch(`/reports/daily?date=${date}`),
-  topCategories: (limit = 5) => apiFetch(`/reports/top-categories?limit=${limit}`),
-  yearly: (year) => apiFetch(`/reports/yearly?year=${year}`),
-  paymentModes: (params = {}) => {
+  // FIX: No year param — backend now computes a rolling 12-month window automatically.
+  // e.g. today = May 2026 → backend returns Jun 2025 … May 2026
+  // Next month (Jun 2026) → backend automatically returns Jul 2025 … Jun 2026
+  getYearlyComparison: () => apiFetch("/reports/yearly"),
+
+  getTopCategories: (limit = 5) => apiFetch(`/reports/top-categories?limit=${limit}`),
+
+  getPaymentModes: (params = {}) => {
     const qs = new URLSearchParams(params).toString()
     return apiFetch(`/reports/payment-modes${qs ? `?${qs}` : ""}`)
   },
-  incomeVsExpense: (params = {}) => {
+
+  getIncomeVsExpense: (params = {}) => {
     const qs = new URLSearchParams(params).toString()
     return apiFetch(`/reports/income-vs-expense${qs ? `?${qs}` : ""}`)
   },
+
+  // Aliases kept for backward compatibility with other parts of the app
+  monthly: (month) => apiFetch(`/reports/monthly?month=${month}`),
+  daily: (date) => apiFetch(`/reports/daily?date=${date}`),
+  yearly: (year) => apiFetch(`/reports/yearly?year=${year}`),
 }
 
 // ============================================================

@@ -1,27 +1,31 @@
 "use client"
-
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer } from "recharts"
-
-// Custom Tooltip Component for Dark Theme
-const CustomTooltip = ({ active, payload, label }) => {
-  if (active && payload && payload.length) {
-    return (
-      <div className="bg-[#1C2C26] border border-gray-600 rounded-lg p-3 shadow-lg">
-        <p className="text-white font-medium">{`${label}`}</p>
-        {payload.map((entry, index) => (
-          <p key={index} style={{ color: entry.color }}>
-            {`${entry.dataKey === "expenses" ? "Expense" : entry.dataKey === "income" ? "Income" : entry.dataKey}: $${entry.value.toLocaleString()}`}
-          </p>
-        ))}
-      </div>
-    )
-  }
-  return null
-}
+import { useSettings } from "../../context/useSettings"
 
 function BarChat(props) {
-  // Check if it's comparison mode (has both income and expenses)
+  const { formatAmount } = useSettings()
   const isComparison = props.dataKey === "comparison"
+
+  // Tooltip defined INSIDE the component so it closes over formatAmount
+  const CustomTooltip = ({ active, payload, label }) => {
+    if (active && payload && payload.length) {
+      return (
+        <div className="bg-[#1C2C26] border border-gray-600 rounded-lg p-3 shadow-lg">
+          <p className="text-white font-medium">{label}</p>
+          {payload.map((entry, index) => (
+            <p key={index} style={{ color: entry.color }}>
+              {`${
+                entry.dataKey === "expenses" ? "Expense"
+                : entry.dataKey === "income"  ? "Income"
+                : entry.dataKey
+              }: ${formatAmount(entry.value)}`}
+            </p>
+          ))}
+        </div>
+      )
+    }
+    return null
+  }
 
   return (
     <div className="w-full h-full bg-transparent">
@@ -37,13 +41,13 @@ function BarChat(props) {
             axisLine={false}
             tickLine={false}
             tick={{ fill: "#9CA3AF", fontSize: 12 }}
-            tickFormatter={(value) => `$${value.toLocaleString()}`}
+            tickFormatter={(value) => formatAmount(value)}
           />
           <Tooltip content={<CustomTooltip />} cursor={false} />
 
           {isComparison ? (
             <>
-              <Bar dataKey="income" fill="#4ADE80" radius={[4, 4, 0, 0]} maxBarSize={50} name="Income" />
+              <Bar dataKey="income"   fill="#4ADE80" radius={[4, 4, 0, 0]} maxBarSize={50} name="Income"   />
               <Bar dataKey="expenses" fill="#EF4444" radius={[4, 4, 0, 0]} maxBarSize={50} name="Expenses" />
             </>
           ) : (

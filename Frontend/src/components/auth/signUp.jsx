@@ -5,10 +5,9 @@ import RightScreen from "./rightScreen"
 import InputField from "./inputField"
 import { useState } from "react"
 import { useNavigate } from "react-router-dom"
+import { authAPI, setToken, setRefreshToken } from "../../api/api"
 
 function SignUp() {
-  const API = "http://localhost:5000/api"
-
   const [isPasswordVisible, setIsPasswordVisible] = useState(false)
   const [firstName, setFirstName] = useState("")
   const [lastName, setLastName] = useState("")
@@ -30,50 +29,52 @@ function SignUp() {
     setLoading(true)
     setError("")
 
+    // Client-side basic validation
+    if (!firstName.trim() || !lastName.trim() || !email.trim() || !password.trim()) {
+      setError("All fields are required.")
+      setLoading(false)
+      return
+    }
+
     try {
-      const res = await fetch(`${API}/auth/signup`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          firstName,
-          lastName,
-          email,
-          password, // backend will bcrypt this
-        }),
+      // FIX: use authAPI (sends auth token automatically) + snake_case keys to match backend
+      const res = await authAPI.signup({
+        first_name: firstName.trim(),
+        last_name: lastName.trim(),
+        email: email.trim(),
+        password,
       })
 
-      const data = await res.json()
-
-      if (!res.ok) {
-        throw new Error(data.message || "Signup failed")
+      // Store tokens if backend returns them on signup
+      if (res.accessToken) {
+        setToken(res.accessToken)
+        setRefreshToken(res.refreshToken)
+      }
+      if (res.token) {
+        setToken(res.token)
+      }
+      if (res.user) {
+        localStorage.setItem("user", JSON.stringify(res.user))
       }
 
-      // optional: store JWT if backend returns it
-      if (data.token) {
-        localStorage.setItem("token", data.token)
-      }
-
-      alert("Account created successfully")
       navigate("/signin")
     } catch (err) {
-      setError(err.message)
+      setError(err.message || "Signup failed. Please try again.")
     } finally {
       setLoading(false)
     }
   }
 
   return (
-    <div className="flex items-center justify-center min-h-screen bg-[#2D5A4A] p-4">
-      <div className="flex w-full max-w-6xl h-[90vh] bg-black rounded-3xl shadow-2xl overflow-hidden">
+    <section className="bg-[#2D5A4A] min-h-screen h-screen w-full flex items-center justify-center p-4 fixed inset-0">
+      <div className="flex w-full max-w-6xl h-[90vh] bg-black rounded-3xl shadow-2xl overflow-hidden items-center justify-center">
 
         {/* LEFT */}
         <div className="flex flex-col justify-center w-full lg:w-1/2 p-12 bg-black text-white">
 
           <div className="mb-8">
-            <h2 className="text-sm text-gray-400">Expense Manager</h2>
-            <h1 className="text-3xl font-bold">Create Account</h1>
+            <h2 className="text-sm font-medium text-gray-400 mb-2">Expense Manager</h2>
+            <h1 className="text-3xl font-bold mb-2">Create Account</h1>
             <p className="text-gray-400 text-sm">
               Start managing expenses smarter
             </p>
@@ -81,7 +82,9 @@ function SignUp() {
 
           {/* ERROR */}
           {error && (
-            <p className="text-red-400 mb-4 text-sm">{error}</p>
+            <p className="text-red-400 text-sm bg-red-900/20 border border-red-700 rounded-lg px-4 py-2 mb-4">
+              {error}
+            </p>
           )}
 
           <form className="space-y-6" onSubmit={handleSubmit}>
@@ -106,6 +109,7 @@ function SignUp() {
             <InputField
               label="Email"
               type="email"
+              placeholder="Johndoe@gmail.com"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
@@ -113,7 +117,7 @@ function SignUp() {
 
             <InputField
               label="Password"
-              type={isPasswordVisible ? "text" : "password"}
+              placeholder="••••••••"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               required
@@ -126,25 +130,37 @@ function SignUp() {
             <button
               type="submit"
               disabled={loading}
-              className="w-full bg-[#4ADE80] text-black font-semibold py-3 rounded-lg hover:bg-[#3BC470] transition"
+              className="w-full bg-[#4ADE80] text-black font-semibold py-3 rounded-lg
+                         hover:bg-[#3BC470] transition-colors duration-200
+                         disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center gap-2"
             >
-              {loading ? "Creating Account..." : "Sign Up"}
+              {loading ? (
+                <>
+                  <svg className="animate-spin h-5 w-5" viewBox="0 0 24 24" fill="none">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z" />
+                  </svg>
+                  Creating Account…
+                </>
+              ) : (
+                "Sign Up"
+              )}
             </button>
           </form>
 
           {/* SOCIAL */}
           <div className="flex justify-center space-x-4 mt-8">
-            <button className="w-12 h-12 bg-white rounded-full flex items-center justify-center">
-              <img src={google} alt="Google" className="w-6 h-6" />
+            <button className="w-12 h-12 bg-white rounded-full flex items-center justify-center hover:bg-gray-100 transition-colors">
+              <img src={google || "/placeholder.svg"} alt="Google" className="w-6 h-6" />
             </button>
-            <button className="w-12 h-12 bg-white rounded-full flex items-center justify-center">
-              <img src={facebook} alt="Facebook" className="w-8 h-8" />
+            <button className="w-12 h-12 bg-white rounded-full flex items-center justify-center hover:bg-gray-100 transition-colors">
+              <img src={facebook || "/placeholder.svg"} alt="Facebook" className="w-8 h-8" />
             </button>
           </div>
 
           <p className="text-center text-gray-400 text-sm mt-8">
             Already have an account?{" "}
-            <a href="/signin" className="text-[#4ADE80]">
+            <a href="/signin" className="text-[#4ADE80] hover:underline">
               Sign In
             </a>
           </p>
@@ -153,7 +169,7 @@ function SignUp() {
         {/* RIGHT */}
         <RightScreen />
       </div>
-    </div>
+    </section>
   )
 }
 

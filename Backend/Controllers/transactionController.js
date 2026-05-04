@@ -71,7 +71,7 @@ const addTransaction = async (req, res) => {
     // Return the newly created transaction
     const result = await pool.query(
       `SELECT t.transaction_id, t.type, t.transaction_date, t.transaction_time,
-              td.title, td.amount, td.retain_until,
+              td.title, td.amount,
               c.name AS category, pm.name AS payment_method
        FROM transactions t
        JOIN transaction_details td ON t.transaction_id = td.transaction_id
@@ -138,9 +138,6 @@ const getRecentTransactions = async (req, res) => {
  *   sort_by     "date"|"amount"|"category"|"description" (default: date)
  *   sort_order  "asc"|"desc"  (default: desc)
  *   search      string        (optional, searches title)
- *
- * Uses the DB function get_transaction_history() for date range;
- * additional filters applied in SQL.
  */
 const getTransactionHistory = async (req, res) => {
   const userId = req.user.user_id;
@@ -172,7 +169,7 @@ const getTransactionHistory = async (req, res) => {
     let query = `
       SELECT t.transaction_id, t.type,
              t.transaction_date, t.transaction_time,
-             td.title, td.amount, td.retain_until,
+             td.title, td.amount,
              c.name AS category, c.category_id,
              pm.name AS payment_method, pm.payment_method_id
       FROM transactions t
@@ -234,7 +231,7 @@ const getTransactionById = async (req, res) => {
   try {
     const result = await pool.query(
       `SELECT t.transaction_id, t.type, t.transaction_date, t.transaction_time,
-              td.title, td.amount, td.retain_until,
+              td.title, td.amount,
               c.name AS category, c.category_id,
               pm.name AS payment_method, pm.payment_method_id
        FROM transactions t
@@ -327,7 +324,6 @@ const deleteTransaction = async (req, res) => {
 // ── DELETE /api/transactions (delete all for user) ────────────
 /**
  * Wipes all transactions for the logged-in user (Danger Zone action).
- * Uses cleanup_old_transactions + direct delete.
  */
 const deleteAllTransactions = async (req, res) => {
   const userId = req.user.user_id;

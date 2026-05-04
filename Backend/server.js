@@ -18,7 +18,7 @@ import settingsRoutes from "./Routes/settingsRoutes.js";
 import dashboardRoutes from "./Routes/dashboardRoutes.js";
 import reportRoutes from "./Routes/reportRoutes.js";
 import referenceRoutes from "./Routes/referenceRoutes.js";
-
+import "./Jobs/transactionCleanup.js";
 // ── DB connection test ────────────────────────────────────────
 import pool from "./Config/db.js";
 
