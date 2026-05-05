@@ -15,7 +15,7 @@
 // ============================================================
 
 import cron from "node-cron";
-import pool from "../Config/db.js";
+import pool from "../config/db.js";
 
 /**
  * Deletes transactions that are exactly 1 year old (by month).
