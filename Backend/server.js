@@ -10,7 +10,7 @@ import helmet from "helmet";
 import morgan from "morgan";
 import rateLimit from "express-rate-limit";
 
-// ── Route Imports ────────────────────────────────────────────
+// Routes
 import authRoutes from "./Routes/authRoutes.js";
 import userRoutes from "./Routes/userRoutes.js";
 import transactionRoutes from "./Routes/transactionRoutes.js";
@@ -18,70 +18,80 @@ import settingsRoutes from "./Routes/settingsRoutes.js";
 import dashboardRoutes from "./Routes/dashboardRoutes.js";
 import reportRoutes from "./Routes/reportRoutes.js";
 import referenceRoutes from "./Routes/referenceRoutes.js";
+
 import "./Jobs/transactionCleanup.js";
-// ── DB connection test ────────────────────────────────────────
-import pool from "./config/db.js";
+import pool from "./Config/db.js";
 
 const app = express();
 const PORT = process.env.PORT || 5000;
 
 // ============================================================
-// SECURITY MIDDLEWARE
+// TRUST PROXY (IMPORTANT for Render)
+// ============================================================
+app.set("trust proxy", 1);
+
+// ============================================================
+// SECURITY
 // ============================================================
 app.use(helmet());
 
-// ── CORS ─────────────────────────────────────────────────────
+// ============================================================
+// CORS FIX (IMPORTANT)
+// ============================================================
+const allowedOrigins = [
+  "http://localhost:5173",
+  "https://expense-manager-dpb9.vercel.app",
+  "https://expense-manager-dpb9.vercel.app/",
+];
+
 app.use(
   cors({
-    origin: process.env.FRONTEND_URL || "http://localhost:5173",
+    origin: function (origin, callback) {
+      // allow requests with no origin (like mobile apps or curl)
+      if (!origin) return callback(null, true);
+
+      if (allowedOrigins.includes(origin)) {
+        return callback(null, true);
+      }
+
+      return callback(new Error("Not allowed by CORS: " + origin));
+    },
     credentials: true,
     methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
     allowedHeaders: ["Content-Type", "Authorization"],
   })
 );
 
-// ── Global Rate Limiter ───────────────────────────────────────
-const globalLimiter = rateLimit({
-  windowMs: Number(process.env.RATE_LIMIT_WINDOW_MS) || 15 * 60 * 1000, // 15 min
-  max: Number(process.env.RATE_LIMIT_MAX_REQUESTS) || 100,
-  standardHeaders: true,
-  legacyHeaders: false,
-  message: {
-    success: false,
-    message: "Too many requests. Please try again later.",
-  },
-});
-app.use(globalLimiter);
-
-// ── Auth-specific stricter limiter (applied inside authRoutes) ─
-export const authLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000,
-  max: Number(process.env.AUTH_RATE_LIMIT_MAX) || 10,
-  standardHeaders: true,
-  legacyHeaders: false,
-  message: {
-    success: false,
-    message: "Too many authentication attempts. Please wait 15 minutes.",
-  },
-});
+// Preflight fix
+app.options("*", cors());
 
 // ============================================================
-// GENERAL MIDDLEWARE
+// RATE LIMIT
+// ============================================================
+app.use(
+  rateLimit({
+    windowMs: 15 * 60 * 1000,
+    max: 100,
+  })
+);
+
+// ============================================================
+// MIDDLEWARE
 // ============================================================
 app.use(express.json({ limit: "5mb" }));
-app.use(express.urlencoded({ extended: true, limit: "5mb" }));
-app.use(morgan(process.env.NODE_ENV === "production" ? "combined" : "dev"));
+app.use(express.urlencoded({ extended: true }));
+app.use(morgan("dev"));
 
 // ============================================================
 // ROUTES
 // ============================================================
-app.use("/api/auth", authRoutes);           // Sign up / Sign in / Refresh
-app.use("/api/users", userRoutes);          // Profile CRUD
-app.use("/api/transactions", transactionRoutes); // Transactions CRUD
-app.use("/api/settings", settingsRoutes);   // Account settings
-app.use("/api/dashboard", dashboardRoutes); // Dashboard aggregates
-app.use("/api/reports", reportRoutes);      // Reports & analytics
-app.use("/api/reference", referenceRoutes); // Categories, currencies, payment methods
+app.use("/api/auth", authRoutes);
+app.use("/api/users", userRoutes);
+app.use("/api/transactions", transactionRoutes);
+app.use("/api/settings", settingsRoutes);
+app.use("/api/dashboard", dashboardRoutes);
+app.use("/api/reports", reportRoutes);
+app.use("/api/reference", referenceRoutes);
 
 // ============================================================
 // HEALTH CHECK
@@ -89,6 +99,7 @@ app.use("/api/reference", referenceRoutes); // Categories, currencies, payment m
 app.get("/api/health", async (_req, res) => {
   try {
     await pool.query("SELECT 1");
+
     res.json({
       success: true,
       message: "Expense Manager API is running",
@@ -96,17 +107,27 @@ app.get("/api/health", async (_req, res) => {
       timestamp: new Date().toISOString(),
       environment: process.env.NODE_ENV,
     });
-  } catch {
+  } catch (err) {
     res.status(503).json({
       success: false,
       message: "Database connection failed",
-      timestamp: new Date().toISOString(),
+      error: err.message,
     });
   }
 });
 
 // ============================================================
-// 404 HANDLER
+// ROOT FIX (IMPORTANT)
+// ============================================================
+app.get("/", (_req, res) => {
+  res.json({
+    success: true,
+    message: "Expense Manager Backend is running 🚀",
+  });
+});
+
+// ============================================================
+// 404
 // ============================================================
 app.use((_req, res) => {
   res.status(404).json({
@@ -116,42 +137,8 @@ app.use((_req, res) => {
 });
 
 // ============================================================
-// GLOBAL ERROR HANDLER
-// ============================================================
-// eslint-disable-next-line no-unused-vars
-app.use((err, _req, res, _next) => {
-  console.error("Unhandled error:", err);
-
-  // Validation errors from express-validator
-  if (err.type === "entity.parse.failed") {
-    return res.status(400).json({ success: false, message: "Invalid JSON body" });
-  }
-
-  const status = err.status || err.statusCode || 500;
-  const message =
-    process.env.NODE_ENV === "production"
-      ? "An unexpected error occurred"
-      : err.message || "Internal server error";
-
-  res.status(status).json({ success: false, message });
-});
-
-// ============================================================
 // START SERVER
 // ============================================================
-app.listen(PORT, async () => {
-  console.log(`\n🚀  Expense Manager API`);
-  console.log(`   Server  : http://localhost:${PORT}`);
-  console.log(`   Health  : http://localhost:${PORT}/api/health`);
-  console.log(`   Env     : ${process.env.NODE_ENV}\n`);
-
-  // Verify DB on startup
-  try {
-    await pool.query("SELECT NOW()");
-    console.log("✅  PostgreSQL connected\n");
-  } catch (err) {
-    console.error("❌  PostgreSQL connection failed:", err.message);
-  }
+app.listen(PORT, () => {
+  console.log(`🚀 Server running on port ${PORT}`);
 });
-
-export default app;
