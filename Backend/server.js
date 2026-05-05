@@ -23,7 +23,7 @@ import referenceRoutes from "./Routes/referenceRoutes.js";
 import "./Jobs/transactionCleanup.js";
 
 // ── DB ──────────────────────────────────────────────────────
-import pool from "./Config/db.js";
+import pool from "./config/db.js";
 
 const app = express();
 
