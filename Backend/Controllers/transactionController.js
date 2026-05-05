@@ -4,7 +4,7 @@
 //          Get History (filtered/sorted), Get Single
 // ============================================================
 
-import pool from "../Config/db.js";
+import pool from "../config/db.js";
 
 // ── POST /api/transactions ────────────────────────────────────
 /**

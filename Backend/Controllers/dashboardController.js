@@ -4,7 +4,7 @@
 //          budget progress, budget alert check
 // ============================================================
 
-import pool from "../Config/db.js";
+import pool from "../config/db.js";
 
 // ── GET /api/dashboard/summary ────────────────────────────────
 /**

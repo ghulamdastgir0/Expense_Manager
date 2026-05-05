@@ -5,7 +5,7 @@
 // No authentication required.
 // ============================================================
 
-import pool from "../Config/db.js";
+import pool from "../config/db.js";
 
 // ── GET /api/reference/categories ────────────────────────────
 const getCategories = async (_req, res) => {

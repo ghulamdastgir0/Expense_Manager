@@ -4,7 +4,7 @@
 //          income vs expense breakdown, payment mode breakdown
 // ============================================================
 
-import pool from "../Config/db.js";
+import pool from "../config/db.js";
 
 // ── GET /api/reports/monthly?month=YYYY-MM ────────────────────
 /**

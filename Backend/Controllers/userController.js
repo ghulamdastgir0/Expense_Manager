@@ -2,7 +2,7 @@
 // Controllers/userController.js
 // ============================================================
 
-import pool from "../Config/db.js";
+import pool from "../config/db.js";
 
 // ── GET /api/users/profile ────────────────────────────────────
 const getProfile = async (req, res) => {

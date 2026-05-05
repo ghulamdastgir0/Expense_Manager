@@ -5,7 +5,7 @@
 
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
-import pool from "../Config/db.js";
+import pool from "../config/db.js";
 
 // ── Helpers ──────────────────────────────────────────────────
 
