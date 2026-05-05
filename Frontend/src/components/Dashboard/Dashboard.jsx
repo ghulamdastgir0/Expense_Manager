@@ -21,8 +21,8 @@ import Profile from "./Profile";
 import EditProfile from "./EditProfile";
 import Settings from "./Settings";
 import { dashboardAPI } from "../../api/api";
-import { SettingsProvider } from "../../context/SettingsProvider";
-import { useSettings } from "../../context/useSettings";
+import { SettingsProvider } from "../../Context/SettingsProvider";
+import { useSettings } from "../../Context/useSettings";
 import { useRef } from "react";
 
 function DashboardInner() {

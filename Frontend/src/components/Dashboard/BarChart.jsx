@@ -1,6 +1,6 @@
 "use client"
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer } from "recharts"
-import { useSettings } from "../../context/useSettings"
+import { useSettings } from "../../Context/useSettings"
 
 function BarChat(props) {
   const { formatAmount } = useSettings()

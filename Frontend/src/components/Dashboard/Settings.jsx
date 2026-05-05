@@ -25,7 +25,7 @@ import {
   transactionAPI,
   clearTokens
 } from "../../api/api";
-import { useSettings } from "../../context/useSettings";
+import { useSettings } from "../../Context/useSettings";
 
 function Settings({ onNavigate, onSettingsSaved }) {
   const [currencyId, setCurrencyId] = useState("");

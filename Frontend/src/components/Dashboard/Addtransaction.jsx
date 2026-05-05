@@ -10,7 +10,7 @@ import {
 import InputField from "../auth/inputField"
 import Box from "./Box"
 import { transactionAPI, settingsAPI, referenceAPI } from "../../api/api"
-import { useSettings } from "../../context/useSettings"
+import { useSettings } from "../../Context/useSettings"
 
 function AddTransaction({ preSelectedType = "expense", onSuccess }) {
   // ✅ Currency symbol + timezone-aware helpers from global context

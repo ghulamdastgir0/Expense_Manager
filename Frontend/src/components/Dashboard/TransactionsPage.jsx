@@ -5,7 +5,7 @@ import ListBox from "./ListBox"
 import Box from "./Box"
 import SummaryRow from "./Summary_Row"
 import { transactionAPI, dashboardAPI } from "../../api/api"
-import { useSettings } from "../../context/useSettings"
+import { useSettings } from "../../Context/useSettings"
 
 function TransactionsPage({ onNavigate, onAddTransaction }) {
   const [recentTransactions, setRecentTransactions] = useState([])

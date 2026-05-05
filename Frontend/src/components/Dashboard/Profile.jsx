@@ -4,7 +4,7 @@ import { Edit, LogOut, DollarSign, BarChart2, Target, TrendingUp } from "lucide-
 import Box from "./Box"
 import StatBox from "./StatBox"
 import { userAPI, dashboardAPI, clearTokens } from "../../api/api"
-import { useSettings } from "../../context/useSettings"
+import { useSettings } from "../../Context/useSettings"
 import { useNavigate } from "react-router-dom"
 
 

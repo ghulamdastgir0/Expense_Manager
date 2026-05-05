@@ -6,7 +6,7 @@ import FilterBox from "./FilterBox";
 import { Filter } from "lucide-react";
 import { useState, useEffect, useMemo, useCallback } from "react";
 import { reportAPI } from "../../api/api";
-import { useSettings } from "../../context/useSettings";
+import { useSettings } from "../../Context/useSettings";
 
 const categoryColors = [
   "#4ADE80",

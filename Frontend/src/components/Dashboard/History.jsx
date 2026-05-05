@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from "react";
 import { Search, Download, ArrowUpDown, Eye, Trash2 } from "lucide-react";
 import Box from "./Box";
 import { transactionAPI, referenceAPI } from "../../api/api";
-import { useSettings } from "../../context/useSettings";
+import { useSettings } from "../../Context/useSettings";
 
 // ─── Safe date/time helpers ───────────────────────────────────────────────────
 // Tries every field name the backend might use for date & time.
