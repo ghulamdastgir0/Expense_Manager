@@ -5,6 +5,8 @@ import Box from "./Box"
 import StatBox from "./StatBox"
 import { userAPI, dashboardAPI, clearTokens } from "../../api/api"
 import { useSettings } from "../../context/useSettings"
+import { useNavigate } from "react-router-dom"
+
 
 function Profile({ onNavigate }) {
   const [userProfile,    setUserProfile]    = useState(null)
@@ -104,9 +106,10 @@ function Profile({ onNavigate }) {
     )
   }, [formatAmount, currencySymbol]) // eslint-disable-line
 
+  const navigate = useNavigate()
   const handleLogout = () => {
     clearTokens()
-    onNavigate("Login")
+    navigate("/signin")
   }
 
   if (loading || !userProfile) {

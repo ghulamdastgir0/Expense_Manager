@@ -51,6 +51,12 @@ const addTransaction = async (req, res) => {
     });
   }
 
+  // Fallback: if frontend sends no date/time, use server's current date/time
+  // This prevents NULL transaction_date which breaks the history date filter
+  const now = new Date();
+  const safeDate = date || now.toISOString().split("T")[0];
+  const safeTime = time || now.toTimeString().split(" ")[0];
+
   try {
     // Call the stored procedure — it inserts into transactions,
     // transaction_details and updates balance_detail
@@ -59,8 +65,8 @@ const addTransaction = async (req, res) => {
       [
         userId,
         normalizedType,
-        date,
-        time,
+        safeDate,
+        safeTime,
         title.trim(),
         parseInt(category_id),
         parseInt(payment_method_id),
@@ -151,10 +157,6 @@ const getTransactionHistory = async (req, res) => {
     search,
   } = req.query;
 
-  // Default: last 90 days
-  const start = from_date || new Date(Date.now() - 90 * 24 * 60 * 60 * 1000).toISOString().split("T")[0];
-  const end = to_date || new Date().toISOString().split("T")[0];
-
   // Allowed sort fields mapped to SQL columns
   const sortFieldMap = {
     date: "t.transaction_date",
@@ -166,6 +168,12 @@ const getTransactionHistory = async (req, res) => {
   const sqlSortOrder = sort_order === "asc" ? "ASC" : "DESC";
 
   try {
+    // ROOT CAUSE FIX: The previous query used BETWEEN $2 AND $3 which silently
+    // excludes any transaction where transaction_date IS NULL. Income transactions
+    // were stored with a NULL date (visible as "Invalid Date" in the UI), so they
+    // never appeared in history. Now date filtering is optional — only applied when
+    // the user explicitly provides from_date / to_date, and NULL dates are always
+    // included via the IS NULL OR condition.
     let query = `
       SELECT t.transaction_id, t.type,
              t.transaction_date, t.transaction_time,
@@ -177,10 +185,21 @@ const getTransactionHistory = async (req, res) => {
       JOIN category c ON td.category_id = c.category_id
       JOIN paymentmethod pm ON td.payment_method_id = pm.payment_method_id
       WHERE t.user_id = $1
-        AND t.transaction_date BETWEEN $2 AND $3
     `;
-    const params = [userId, start, end];
-    let paramIndex = 4;
+    const params = [userId];
+    let paramIndex = 2;
+
+    // Only apply date filter when user explicitly sets dates
+    if (from_date) {
+      query += ` AND (t.transaction_date IS NULL OR t.transaction_date >= $${paramIndex})`;
+      params.push(from_date);
+      paramIndex++;
+    }
+    if (to_date) {
+      query += ` AND (t.transaction_date IS NULL OR t.transaction_date <= $${paramIndex})`;
+      params.push(to_date);
+      paramIndex++;
+    }
 
     if (category && category !== "all") {
       query += ` AND LOWER(c.name) = LOWER($${paramIndex})`;
@@ -201,7 +220,8 @@ const getTransactionHistory = async (req, res) => {
       paramIndex++;
     }
 
-    query += ` ORDER BY ${sqlSortField} ${sqlSortOrder}`;
+    // NULL dates sort last regardless of sort order
+    query += ` ORDER BY (t.transaction_date IS NULL) ASC, ${sqlSortField} ${sqlSortOrder}`;
 
     const result = await pool.query(query, params);
 
@@ -210,7 +230,7 @@ const getTransactionHistory = async (req, res) => {
       data: {
         transactions: result.rows,
         total: result.rows.length,
-        filters: { from_date: start, to_date: end, category, type, search },
+        filters: { from_date, to_date, category, type, search },
       },
     });
   } catch (err) {

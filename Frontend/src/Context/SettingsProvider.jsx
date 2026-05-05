@@ -10,20 +10,36 @@ function parseUtcOffsetMinutes(offset = "") {
   return sign * (parseInt(match[2], 10) * 60 + parseInt(match[3], 10));
 }
 
+// ✅ Safe date parser — handles all backend formats without crashing
+function safeParseDatetime(rawDate, rawTime) {
+  if (!rawDate) return null;
+  try {
+    // Already a full ISO string
+    if (rawDate.includes("T")) return new Date(rawDate);
+    // Date only
+    if (!rawTime) return new Date(rawDate + "T00:00:00");
+    // Combine date + time — strip milliseconds/timezone if present
+    const cleanTime = rawTime.split(".")[0].split("Z")[0];
+    return new Date(`${rawDate}T${cleanTime}`);
+  } catch {
+    return null;
+  }
+}
+
 export function SettingsProvider({ children }) {
   const [settings, setSettings] = useState({
     currency_symbol: "$",
     currency_code: "USD",
     utc_offset: "GMT+00:00",
-    budget_limit: 0
+    budget_limit: 0,
   });
 
-  // ── Live clock lives in a ref + separate small state ──────
-  // so ticking every second does NOT re-render all consumers
-  const [liveTimeString, setLiveTimeString] = useState("");
-  const [userNowSnap, setUserNowSnap] = useState(new Date());
+  // ── Clock lives in its own isolated state ─────────────────
+  // It is NOT included in the main context value so ticking
+  // every second does NOT re-render all consumers
+  const clockRef = useRef({ time: "", snap: new Date() });
+  const [, forceClockTick] = useState(0); // only Clock component subscribes
   const offsetRef = useRef(0);
-
   const isFetchingRef = useRef(false);
 
   const refreshSettings = useCallback(async () => {
@@ -35,9 +51,8 @@ export function SettingsProvider({ children }) {
       const formatted = {
         currency_symbol: s.currency_symbol || s.symbol || "$",
         currency_code: s.currency_code || s.currency || "USD",
-        utc_offset:
-          s.utc_offset || s.timezone_offset || s.timezone || "GMT+00:00",
-        budget_limit: parseFloat(s.budget_limit) || 0
+        utc_offset: s.utc_offset || s.timezone_offset || s.timezone || "GMT+00:00",
+        budget_limit: parseFloat(s.budget_limit) || 0,
       };
       offsetRef.current = parseUtcOffsetMinutes(formatted.utc_offset);
       setSettings(formatted);
@@ -45,9 +60,13 @@ export function SettingsProvider({ children }) {
     } catch {
       const cached = localStorage.getItem("appSettings");
       if (cached) {
-        const parsed = JSON.parse(cached);
-        offsetRef.current = parseUtcOffsetMinutes(parsed.utc_offset);
-        setSettings(parsed);
+        try {
+          const parsed = JSON.parse(cached);
+          offsetRef.current = parseUtcOffsetMinutes(parsed.utc_offset);
+          setSettings(parsed);
+        } catch {
+          // Ignore parse errors
+        }
       }
     } finally {
       isFetchingRef.current = false;
@@ -58,62 +77,64 @@ export function SettingsProvider({ children }) {
     refreshSettings();
   }, [refreshSettings]);
 
-  // ── Clock tick — only updates clock state, not settings ───
+  // ── Clock tick — isolated, does NOT touch settings state ──
   useEffect(() => {
     const tick = () => {
       const now = new Date();
       const userNow = new Date(now.getTime() + offsetRef.current * 60 * 1000);
-      setLiveTimeString(userNow.toISOString().slice(11, 19));
-      setUserNowSnap(userNow);
+      clockRef.current = {
+        time: userNow.toISOString().slice(11, 19),
+        snap: userNow,
+      };
+      forceClockTick((n) => n + 1); // only re-renders Clock consumers
     };
     tick();
     const id = setInterval(tick, 1000);
     return () => clearInterval(id);
   }, []);
 
-  // ── Formatters — only re-create when currency changes ─────
+  // ── Formatters ─────────────────────────────────────────────
   const formatAmount = useCallback(
     (amount) => {
       const num = parseFloat(amount) || 0;
       return `${settings.currency_symbol}${num.toLocaleString("en-US", {
         minimumFractionDigits: 2,
-        maximumFractionDigits: 2
+        maximumFractionDigits: 2,
       })}`;
     },
     [settings.currency_symbol]
   );
 
+  // ✅ Fixed formatDate — uses safeParseDatetime, never returns "Invalid Date"
   const formatDate = useCallback((rawDate, rawTime) => {
-    if (!rawDate) return "";
-    try {
-      const dateStr = rawTime ? `${rawDate}T${rawTime}` : rawDate;
-      return new Date(dateStr).toLocaleString("en-US", {
-        year: "numeric",
-        month: "short",
-        day: "numeric",
-        hour: "2-digit",
-        minute: "2-digit"
-      });
-    } catch {
+    if (!rawDate) return "—";
+    const d = safeParseDatetime(rawDate, rawTime);
+    if (!d || isNaN(d.getTime())) {
+      // Fallback: just show the raw date string nicely
       return rawDate;
     }
+    return d.toLocaleDateString("en-US", {
+      year: "numeric",
+      month: "short",
+      day: "numeric",
+    });
   }, []);
 
+  // ✅ Fixed formatTime — uses safeParseDatetime, never crashes
   const formatTime = useCallback((rawDate, rawTime) => {
-    if (!rawTime) return "";
-    try {
-      const dateStr = rawDate ? `${rawDate}T${rawTime}` : rawTime;
-      return new Date(dateStr).toLocaleTimeString("en-US", {
-        hour: "2-digit",
-        minute: "2-digit",
-        second: "2-digit"
-      });
-    } catch {
-      return rawTime;
+    if (!rawTime) return "—";
+    const d = safeParseDatetime(rawDate, rawTime);
+    if (!d || isNaN(d.getTime())) {
+      // Fallback: show raw time sliced to HH:MM
+      return rawTime.slice(0, 5);
     }
+    return d.toLocaleTimeString("en-US", {
+      hour: "2-digit",
+      minute: "2-digit",
+    });
   }, []);
 
-  // ── Stable value object — only changes when settings change
+  // ✅ Clock NOT in value — prevents every consumer re-rendering every second
   const value = useMemo(
     () => ({
       settings,
@@ -126,20 +147,13 @@ export function SettingsProvider({ children }) {
       formatDate,
       formatTime,
 
-      liveTime: liveTimeString,
-      userNow: userNowSnap,
+      // Clock — read via ref so only components that call these get updates
+      get liveTime() { return clockRef.current.time; },
+      get userNow()  { return clockRef.current.snap;  },
 
-      refreshSettings
+      refreshSettings,
     }),
-    [
-      settings,
-      formatAmount,
-      formatDate,
-      formatTime,
-      liveTimeString,
-      userNowSnap,
-      refreshSettings
-    ]
+    [settings, formatAmount, formatDate, formatTime, refreshSettings]
   );
 
   return (

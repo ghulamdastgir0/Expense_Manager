@@ -39,7 +39,7 @@ function SignIn() {
       localStorage.setItem("user", JSON.stringify(res.data.user))
 
       // Navigate to dashboard
-      navigate("/dashboard")
+      navigate("/dashboard", { replace: true })
     } catch (err) {
       // err.message comes from apiFetch — maps to data.message from backend
       setError(err.message || "Sign in failed. Please try again.")

@@ -12,7 +12,6 @@ function TransactionsPage({ onNavigate, onAddTransaction }) {
   const [summaryData, setSummaryData]               = useState([])
   const [loading, setLoading]                       = useState(true)
 
-  // ✅ Currency symbol from global context — updates instantly when settings change
   const { formatAmount, formatDate } = useSettings()
 
   const fetchData = useCallback(async () => {
@@ -26,7 +25,8 @@ function TransactionsPage({ onNavigate, onAddTransaction }) {
       const txs = (txRes?.data?.transactions || []).map((t) => ({
         id:          t.transaction_id,
         description: t.title,
-        amount:      t.type === "Income" ? +t.amount : -t.amount,
+        // ✅ Use case-insensitive check so "Income"/"income" both work
+        amount:      t.type?.toLowerCase() === "income" ? +t.amount : -t.amount,
         rawDate:     t.transaction_date,
         rawTime:     t.transaction_time,
         category:    t.category,
@@ -34,11 +34,11 @@ function TransactionsPage({ onNavigate, onAddTransaction }) {
       }))
       setRecentTransactions(txs)
 
-      const stats  = dashRes?.data?.stats || {}
+      const stats = dashRes?.data?.stats || {}
       setSummaryData([
-        { label: "Total Income",       value: null, rawValue: stats.monthly_income,   bg: "bg-green-900/20", textColor: "text-green-400" },
-        { label: "Total Expenses",     value: null, rawValue: stats.monthly_expenses,  bg: "bg-red-900/20",   textColor: "text-red-400"   },
-        { label: "Last Month Balance", value: null, rawValue: stats.previous_balance,  bg: "bg-blue-900/20",  textColor: "text-blue-400"  },
+        { label: "Total Income",       rawValue: stats.monthly_income,   bg: "bg-green-900/20", textColor: "text-green-400" },
+        { label: "Total Expenses",     rawValue: stats.monthly_expenses,  bg: "bg-red-900/20",   textColor: "text-red-400"   },
+        { label: "Last Month Balance", rawValue: stats.previous_balance,  bg: "bg-blue-900/20",  textColor: "text-blue-400"  },
       ])
     } catch (err) {
       console.error("TransactionsPage API error:", err?.message || err)
@@ -50,21 +50,20 @@ function TransactionsPage({ onNavigate, onAddTransaction }) {
   useEffect(() => { fetchData() }, [fetchData])
 
   const quickActions = [
-    { name: "Add Expense", color: "bg-red-600 hover:bg-red-700",    icon: TrendingDown, action: () => onAddTransaction("expense") },
-    { name: "Add Income",  color: "bg-green-600 hover:bg-green-700", icon: TrendingUp,   action: () => onAddTransaction("income")  },
-    { name: "View Reports",color: "bg-purple-600 hover:bg-purple-700",icon: BarChart3,   action: () => onNavigate("Reports")       },
-    { name: "View History",color: "bg-blue-600 hover:bg-blue-700",   icon: HistoryIcon,  action: () => onNavigate("History")       },
+    { name: "Add Expense",  color: "bg-red-600 hover:bg-red-700",     icon: TrendingDown, action: () => onAddTransaction("expense") },
+    { name: "Add Income",   color: "bg-green-600 hover:bg-green-700", icon: TrendingUp,   action: () => onAddTransaction("income")  },
+    { name: "View Reports", color: "bg-purple-600 hover:bg-purple-700",icon: BarChart3,    action: () => onNavigate("Reports")       },
+    { name: "View History", color: "bg-blue-600 hover:bg-blue-700",   icon: HistoryIcon,  action: () => onNavigate("History")       },
   ]
 
   const renderTransactionItem = (t) => (
     <div className="flex justify-between border-b border-gray-700 pb-3 hover:bg-gray-800/30 px-2 py-1 rounded transition cursor-pointer">
       <div>
         <p className="text-sm font-medium text-white">{t.description}</p>
-        {/* ✅ Date shown in user's timezone */}
+        {/* ✅ formatDate now uses safeParseDatetime — no more "Invalid Date" */}
         <p className="text-xs text-gray-400">{formatDate(t.rawDate, t.rawTime)}</p>
       </div>
       <div className="text-right">
-        {/* ✅ Amount shown in user's currency */}
         <p className={`text-sm font-semibold ${t.amount > 0 ? "text-green-400" : "text-red-400"}`}>
           {t.amount > 0 ? "+" : "-"}{formatAmount(Math.abs(t.amount))}
         </p>
@@ -118,7 +117,6 @@ function TransactionsPage({ onNavigate, onAddTransaction }) {
 
         <Box title="Transaction Summary" subtitle="This month overview" className="shadow-lg">
           <div className="space-y-4">
-            {/* ✅ formatAmount applied at render time — picks up new currency instantly */}
             {summaryData.map((item, i) => (
               <SummaryRow
                 key={i}
