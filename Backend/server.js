@@ -20,7 +20,7 @@ import reportRoutes from "./Routes/reportRoutes.js";
 import referenceRoutes from "./Routes/referenceRoutes.js";
 import "./Jobs/transactionCleanup.js";
 // ── DB connection test ────────────────────────────────────────
-import pool from "./Config/db.js";
+import pool from "./config/db.js";
 
 const app = express();
 const PORT = process.env.PORT || 5000;
