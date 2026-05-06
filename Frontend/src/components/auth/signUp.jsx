@@ -1,3 +1,5 @@
+import google from "../../assets/google.svg"
+import facebook from "../../assets/facebook.svg"
 import eye from "../../assets/eye.svg"
 import RightScreen from "./rightScreen"
 import InputField from "./inputField"
@@ -7,35 +9,54 @@ import { authAPI, setToken, setRefreshToken } from "../../api/api"
 
 function SignUp() {
   const [isPasswordVisible, setIsPasswordVisible] = useState(false)
-  const [firstName, setFirstName]                 = useState("")
-  const [lastName, setLastName]                   = useState("")
-  const [email, setEmail]                         = useState("")
-  const [password, setPassword]                   = useState("")
-  const [loading, setLoading]                     = useState(false)
-  const [error, setError]                         = useState("")
+  const [firstName, setFirstName] = useState("")
+  const [lastName, setLastName] = useState("")
+  const [email, setEmail] = useState("")
+  const [password, setPassword] = useState("")
+
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState("")
 
   const navigate = useNavigate()
-  const togglePasswordVisibility = () => setIsPasswordVisible((prev) => !prev)
 
+  const togglePasswordVisibility = () => {
+    setIsPasswordVisible((prev) => !prev)
+  }
+
+  // ===== SIGNUP API =====
   const handleSubmit = async (e) => {
     e.preventDefault()
     setLoading(true)
     setError("")
+
+    // Client-side basic validation
     if (!firstName.trim() || !lastName.trim() || !email.trim() || !password.trim()) {
       setError("All fields are required.")
       setLoading(false)
       return
     }
+
     try {
+      // FIX: use authAPI (sends auth token automatically) + snake_case keys to match backend
       const res = await authAPI.signup({
         first_name: firstName.trim(),
-        last_name:  lastName.trim(),
-        email:      email.trim(),
+        last_name: lastName.trim(),
+        email: email.trim(),
         password,
       })
-      if (res.accessToken) { setToken(res.accessToken); setRefreshToken(res.refreshToken) }
-      if (res.token)       { setToken(res.token) }
-      if (res.user)        { localStorage.setItem("user", JSON.stringify(res.user)) }
+
+      // Store tokens if backend returns them on signup
+      if (res.accessToken) {
+        setToken(res.accessToken)
+        setRefreshToken(res.refreshToken)
+      }
+      if (res.token) {
+        setToken(res.token)
+      }
+      if (res.user) {
+        localStorage.setItem("user", JSON.stringify(res.user))
+      }
+
       navigate("/signin")
     } catch (err) {
       setError(err.message || "Signup failed. Please try again.")
@@ -45,18 +66,21 @@ function SignUp() {
   }
 
   return (
-    // ✅ No fixed/inset — allows natural scroll on small screens
-    <section className="bg-[#2D5A4A] min-h-screen w-full flex items-center justify-center p-6">
-      <div className="flex w-full max-w-6xl bg-black rounded-3xl shadow-2xl overflow-hidden">
+    <section className="bg-[#2D5A4A] min-h-screen w-full flex items-center justify-center p-4">
+      <div className="flex flex-col lg:flex-row w-full max-w-6xl bg-black rounded-3xl shadow-2xl overflow-hidden">
 
-        {/* LEFT: Form */}
-        <div className="flex flex-col justify-center w-full lg:w-1/2 px-10 py-14 bg-black text-white">
+        {/* LEFT */}
+        <div className="flex flex-col justify-center w-full lg:w-1/2 p-6 md:p-12 bg-black text-white min-h-screen lg:min-h-auto">
+
           <div className="mb-8">
             <h2 className="text-sm font-medium text-gray-400 mb-2">Expense Manager</h2>
             <h1 className="text-3xl font-bold mb-2">Create Account</h1>
-            <p className="text-gray-400 text-sm">Start managing expenses smarter</p>
+            <p className="text-gray-400 text-sm">
+              Start managing expenses smarter
+            </p>
           </div>
 
+          {/* ERROR */}
           {error && (
             <p className="text-red-400 text-sm bg-red-900/20 border border-red-700 rounded-lg px-4 py-2 mb-4">
               {error}
@@ -64,24 +88,48 @@ function SignUp() {
           )}
 
           <form className="space-y-6" onSubmit={handleSubmit}>
+
             <div className="grid grid-cols-2 gap-4">
-              <InputField label="First Name" type="text" value={firstName} onChange={(e) => setFirstName(e.target.value)} required />
-              <InputField label="Last Name"  type="text" value={lastName}  onChange={(e) => setLastName(e.target.value)}  required />
+              <InputField
+                label="First Name"
+                type="text"
+                value={firstName}
+                onChange={(e) => setFirstName(e.target.value)}
+                required
+              />
+              <InputField
+                label="Last Name"
+                type="text"
+                value={lastName}
+                onChange={(e) => setLastName(e.target.value)}
+                required
+              />
             </div>
 
             <InputField
-              label="Email" type="email" placeholder="Johndoe@gmail.com"
-              value={email} onChange={(e) => setEmail(e.target.value)} required
+              label="Email"
+              type="email"
+              placeholder="Johndoe@gmail.com"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              required
             />
+
             <InputField
-              label="Password" placeholder="••••••••"
-              value={password} onChange={(e) => setPassword(e.target.value)}
-              required eyeIcon={eye} showPasswordToggle
-              showPassword={isPasswordVisible} onTogglePassword={togglePasswordVisibility}
+              label="Password"
+              placeholder="••••••••"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              required
+              eyeIcon={eye}
+              showPasswordToggle
+              showPassword={isPasswordVisible}
+              onTogglePassword={togglePasswordVisibility}
             />
 
             <button
-              type="submit" disabled={loading}
+              type="submit"
+              disabled={loading}
               className="w-full bg-[#4ADE80] text-black font-semibold py-3 rounded-lg
                          hover:bg-[#3BC470] transition-colors duration-200
                          disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center gap-2"
@@ -94,20 +142,32 @@ function SignUp() {
                   </svg>
                   Creating Account…
                 </>
-              ) : "Sign Up"}
+              ) : (
+                "Sign Up"
+              )}
             </button>
           </form>
 
+          {/* SOCIAL */}
+          <div className="flex justify-center space-x-4 mt-8">
+            <button className="w-12 h-12 bg-white rounded-full flex items-center justify-center hover:bg-gray-100 transition-colors">
+              <img src={google || "/placeholder.svg"} alt="Google" className="w-6 h-6" />
+            </button>
+            <button className="w-12 h-12 bg-white rounded-full flex items-center justify-center hover:bg-gray-100 transition-colors">
+              <img src={facebook || "/placeholder.svg"} alt="Facebook" className="w-8 h-8" />
+            </button>
+          </div>
+
           <p className="text-center text-gray-400 text-sm mt-8">
             Already have an account?{" "}
-            <a href="/signin" className="text-[#4ADE80] hover:underline">Sign In</a>
+            <a href="/signin" className="text-[#4ADE80] hover:underline">
+              Sign In
+            </a>
           </p>
         </div>
 
-        {/* RIGHT: hidden below lg breakpoint */}
-        <div className="hidden lg:block lg:w-1/2">
-          <RightScreen />
-        </div>
+        {/* RIGHT */}
+        <RightScreen />
       </div>
     </section>
   )
