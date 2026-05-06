@@ -68,7 +68,7 @@ function SignUp() {
       <div className="flex flex-col lg:flex-row w-full max-w-6xl bg-black rounded-3xl shadow-2xl overflow-hidden">
 
         {/* LEFT */}
-        <div className="flex flex-col justify-center w-full lg:w-1/2 p-6 md:p-12 bg-black text-white min-h-screen lg:min-h-auto">
+        <div className="flex flex-col justify-center w-full lg:w-1/2 p-6 md:p-12 bg-black text-white">
 
           <div className="mb-8">
             <h2 className="text-sm font-medium text-gray-400 mb-2">Expense Manager</h2>
