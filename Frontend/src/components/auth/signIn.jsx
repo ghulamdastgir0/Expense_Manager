@@ -1,6 +1,4 @@
 import { useState } from "react"
-import google from "../../assets/google.svg"
-import facebook from "../../assets/facebook.svg"
 import eye from "../../assets/eye.svg"
 import RightScreen from "./rightScreen"
 import InputField from "./inputField"
@@ -8,22 +6,20 @@ import { useNavigate } from "react-router-dom"
 import { authAPI, setToken, setRefreshToken } from "../../api/api"
 
 function SignIn() {
-  const [email, setEmail]             = useState("")
-  const [password, setPassword]       = useState("")
+  const [email, setEmail]               = useState("")
+  const [password, setPassword]         = useState("")
   const [showPassword, setShowPassword] = useState(false)
-  const [error, setError]             = useState("")      // API / validation error message
-  const [isLoading, setIsLoading]     = useState(false)   // disables button while fetching
+  const [error, setError]               = useState("")
+  const [isLoading, setIsLoading]       = useState(false)
 
   const navigate = useNavigate()
 
   const togglePasswordVisibility = () => setShowPassword((prev) => !prev)
 
-  // ── Form submit → call /api/auth/signin ──────────────────
   const handleSubmit = async (e) => {
     e.preventDefault()
     setError("")
 
-    // Client-side basic validation
     if (!email.trim() || !password.trim()) {
       setError("Email and password are required.")
       return
@@ -33,15 +29,12 @@ function SignIn() {
     try {
       const res = await authAPI.signin({ email: email.trim(), password })
 
-      // Save tokens & user in localStorage so api.js can attach them to future requests
       setToken(res.data.accessToken)
       setRefreshToken(res.data.refreshToken)
       localStorage.setItem("user", JSON.stringify(res.data.user))
 
-      // Navigate to dashboard
       navigate("/dashboard", { replace: true })
     } catch (err) {
-      // err.message comes from apiFetch — maps to data.message from backend
       setError(err.message || "Sign in failed. Please try again.")
     } finally {
       setIsLoading(false)
@@ -49,11 +42,12 @@ function SignIn() {
   }
 
   return (
-    <section className="bg-[#2D5A4A] min-h-screen h-screen w-full flex items-center justify-center p-4 fixed inset-0">
-      <div className="flex w-full max-w-6xl h-[90vh] bg-black rounded-3xl shadow-2xl overflow-hidden items-center justify-center">
+    // ✅ min-h-screen + overflow-y-auto so small screens can scroll instead of clipping
+    <section className="bg-[#2D5A4A] min-h-screen w-full flex items-center justify-center p-4 overflow-y-auto">
+      <div className="flex w-full max-w-5xl bg-black rounded-3xl shadow-2xl overflow-hidden my-auto">
 
         {/* ── Left: Login Form ── */}
-        <div className="flex flex-col justify-center w-full lg:w-1/2 p-12 bg-black text-white">
+        <div className="flex flex-col justify-center w-full lg:w-1/2 px-8 py-10 md:px-12 bg-black text-white">
           <div className="mb-8">
             <h2 className="text-sm font-medium text-gray-400 mb-2">Expense Manager</h2>
             <h1 className="text-3xl font-bold mb-2">Welcome Back</h1>
@@ -62,7 +56,7 @@ function SignIn() {
             </p>
           </div>
 
-          <form className="space-y-6" onSubmit={handleSubmit}>
+          <form className="space-y-5" onSubmit={handleSubmit}>
             <InputField
               label="Email"
               type="email"
@@ -86,7 +80,6 @@ function SignIn() {
               eyeIcon={eye}
             />
 
-            {/* ── Error message from API ── */}
             {error && (
               <p className="text-red-400 text-sm bg-red-900/20 border border-red-700 rounded-lg px-4 py-2">
                 {error}
@@ -102,7 +95,6 @@ function SignIn() {
             >
               {isLoading ? (
                 <>
-                  {/* Simple spinner */}
                   <svg className="animate-spin h-5 w-5" viewBox="0 0 24 24" fill="none">
                     <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
                     <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z" />
@@ -115,16 +107,6 @@ function SignIn() {
             </button>
           </form>
 
-          {/* Social Login */}
-          <div className="flex justify-center space-x-4 mt-8">
-            <button className="w-12 h-12 bg-white rounded-full flex items-center justify-center hover:bg-gray-100 transition-colors">
-              <img src={google || "/placeholder.svg"} alt="Google" className="w-6 h-6" />
-            </button>
-            <button className="w-12 h-12 bg-white rounded-full flex items-center justify-center hover:bg-gray-100 transition-colors">
-              <img src={facebook || "/placeholder.svg"} alt="Facebook" className="w-8 h-8" />
-            </button>
-          </div>
-
           <p className="text-center text-gray-400 text-sm mt-8">
             Don't have an account?{" "}
             <a href="/signup" className="text-[#4ADE80] hover:underline">
@@ -133,8 +115,10 @@ function SignIn() {
           </p>
         </div>
 
-        {/* ── Right: Feature Panel ── */}
-        <RightScreen />
+        {/* ── Right: Feature Panel — hidden on small screens ── */}
+        <div className="hidden lg:block lg:w-1/2">
+          <RightScreen />
+        </div>
       </div>
     </section>
   )
