@@ -1,6 +1,4 @@
 import { useState } from "react"
-import google from "../../assets/google.svg"
-import facebook from "../../assets/facebook.svg"
 import eye from "../../assets/eye.svg"
 import RightScreen from "./rightScreen"
 import InputField from "./inputField"
@@ -114,16 +112,6 @@ function SignIn() {
               )}
             </button>
           </form>
-
-          {/* Social Login */}
-          <div className="flex justify-center space-x-4 mt-8">
-            <button className="w-12 h-12 bg-white rounded-full flex items-center justify-center hover:bg-gray-100 transition-colors">
-              <img src={google || "/placeholder.svg"} alt="Google" className="w-6 h-6" />
-            </button>
-            <button className="w-12 h-12 bg-white rounded-full flex items-center justify-center hover:bg-gray-100 transition-colors">
-              <img src={facebook || "/placeholder.svg"} alt="Facebook" className="w-8 h-8" />
-            </button>
-          </div>
 
           <p className="text-center text-gray-400 text-sm mt-8">
             Don't have an account?{" "}
