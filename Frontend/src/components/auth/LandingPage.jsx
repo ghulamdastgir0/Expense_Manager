@@ -53,13 +53,12 @@ const LandingPage = () => {
 
             {/* Mobile: Login & Sign Up Buttons */}
             <div className="flex md:hidden justify-center gap-3 mt-4 py-10">
-              <button className="bg-[#539165] text-white px-4 py-2  rounded-md text-sm">
-                Login
+              <button onClick={() => navigate('/signin')} className="bg-[#539165] text-white px-4 py-2 rounded-md hover:bg-[#407c4e] hover:scale-110 transition text-sm">
+                Sign In
               </button>
-             <button className="text-[#539165] border border-[#539165] bg-black px-4 py-2 rounded-md hover:bg-[#1a1a1a] transition text-sm">
+              <button onClick={() => navigate('/signup')} className="text-[#539165] border border-[#539165] bg-black px-4 py-2 rounded-md hover:bg-[#1a1a1a] transition text-sm">
                 Sign Up
-                </button>
-
+              </button>
             </div>
           </div>
 
