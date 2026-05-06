@@ -13,26 +13,21 @@ function SignIn() {
   const [isLoading, setIsLoading]       = useState(false)
 
   const navigate = useNavigate()
-
   const togglePasswordVisibility = () => setShowPassword((prev) => !prev)
 
   const handleSubmit = async (e) => {
     e.preventDefault()
     setError("")
-
     if (!email.trim() || !password.trim()) {
       setError("Email and password are required.")
       return
     }
-
     setIsLoading(true)
     try {
       const res = await authAPI.signin({ email: email.trim(), password })
-
       setToken(res.data.accessToken)
       setRefreshToken(res.data.refreshToken)
       localStorage.setItem("user", JSON.stringify(res.data.user))
-
       navigate("/dashboard", { replace: true })
     } catch (err) {
       setError(err.message || "Sign in failed. Please try again.")
@@ -42,12 +37,13 @@ function SignIn() {
   }
 
   return (
-    // ✅ min-h-screen + overflow-y-auto so small screens can scroll instead of clipping
-    <section className="bg-[#2D5A4A] min-h-screen w-full flex items-center justify-center p-4 overflow-y-auto">
-      <div className="flex w-full max-w-5xl bg-black rounded-3xl shadow-2xl overflow-hidden my-auto">
+    // ✅ No fixed/inset — allows natural scroll on small screens
+    // ✅ min-h-screen fills viewport but doesn't trap content
+    <section className="bg-[#2D5A4A] min-h-screen w-full flex items-center justify-center p-6">
+      <div className="flex w-full max-w-6xl bg-black rounded-3xl shadow-2xl overflow-hidden">
 
-        {/* ── Left: Login Form ── */}
-        <div className="flex flex-col justify-center w-full lg:w-1/2 px-8 py-10 md:px-12 bg-black text-white">
+        {/* LEFT: Form — full width on small, half on large */}
+        <div className="flex flex-col justify-center w-full lg:w-1/2 px-10 py-14 bg-black text-white">
           <div className="mb-8">
             <h2 className="text-sm font-medium text-gray-400 mb-2">Expense Manager</h2>
             <h1 className="text-3xl font-bold mb-2">Welcome Back</h1>
@@ -56,28 +52,17 @@ function SignIn() {
             </p>
           </div>
 
-          <form className="space-y-5" onSubmit={handleSubmit}>
+          <form className="space-y-6" onSubmit={handleSubmit}>
             <InputField
-              label="Email"
-              type="email"
-              id="email"
+              label="Email" type="email" id="email"
               placeholder="Johndoe@gmail.com"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              required
+              value={email} onChange={(e) => setEmail(e.target.value)} required
             />
-
             <InputField
-              label="Password"
-              id="password"
-              placeholder="••••••••"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              required
-              showPasswordToggle={true}
-              showPassword={showPassword}
-              onTogglePassword={togglePasswordVisibility}
-              eyeIcon={eye}
+              label="Password" id="password" placeholder="••••••••"
+              value={password} onChange={(e) => setPassword(e.target.value)}
+              required showPasswordToggle showPassword={showPassword}
+              onTogglePassword={togglePasswordVisibility} eyeIcon={eye}
             />
 
             {error && (
@@ -87,8 +72,7 @@ function SignIn() {
             )}
 
             <button
-              type="submit"
-              disabled={isLoading}
+              type="submit" disabled={isLoading}
               className="w-full bg-[#4ADE80] text-black font-semibold py-3 rounded-lg
                          hover:bg-[#3BC470] transition-colors duration-200
                          disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center gap-2"
@@ -101,21 +85,17 @@ function SignIn() {
                   </svg>
                   Signing In…
                 </>
-              ) : (
-                "Sign In"
-              )}
+              ) : "Sign In"}
             </button>
           </form>
 
           <p className="text-center text-gray-400 text-sm mt-8">
             Don't have an account?{" "}
-            <a href="/signup" className="text-[#4ADE80] hover:underline">
-              Sign Up
-            </a>
+            <a href="/signup" className="text-[#4ADE80] hover:underline">Sign Up</a>
           </p>
         </div>
 
-        {/* ── Right: Feature Panel — hidden on small screens ── */}
+        {/* RIGHT: hidden below lg breakpoint */}
         <div className="hidden lg:block lg:w-1/2">
           <RightScreen />
         </div>

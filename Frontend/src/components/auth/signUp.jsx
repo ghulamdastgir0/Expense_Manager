@@ -15,20 +15,17 @@ function SignUp() {
   const [error, setError]                         = useState("")
 
   const navigate = useNavigate()
-
   const togglePasswordVisibility = () => setIsPasswordVisible((prev) => !prev)
 
   const handleSubmit = async (e) => {
     e.preventDefault()
     setLoading(true)
     setError("")
-
     if (!firstName.trim() || !lastName.trim() || !email.trim() || !password.trim()) {
       setError("All fields are required.")
       setLoading(false)
       return
     }
-
     try {
       const res = await authAPI.signup({
         first_name: firstName.trim(),
@@ -36,11 +33,9 @@ function SignUp() {
         email:      email.trim(),
         password,
       })
-
       if (res.accessToken) { setToken(res.accessToken); setRefreshToken(res.refreshToken) }
       if (res.token)       { setToken(res.token) }
       if (res.user)        { localStorage.setItem("user", JSON.stringify(res.user)) }
-
       navigate("/signin")
     } catch (err) {
       setError(err.message || "Signup failed. Please try again.")
@@ -50,13 +45,12 @@ function SignUp() {
   }
 
   return (
-    // ✅ min-h-screen + overflow-y-auto so small screens can scroll instead of clipping
-    <section className="bg-[#2D5A4A] min-h-screen w-full flex items-center justify-center p-4 overflow-y-auto">
-      <div className="flex w-full max-w-5xl bg-black rounded-3xl shadow-2xl overflow-hidden my-auto">
+    // ✅ No fixed/inset — allows natural scroll on small screens
+    <section className="bg-[#2D5A4A] min-h-screen w-full flex items-center justify-center p-6">
+      <div className="flex w-full max-w-6xl bg-black rounded-3xl shadow-2xl overflow-hidden">
 
-        {/* LEFT */}
-        <div className="flex flex-col justify-center w-full lg:w-1/2 px-8 py-10 md:px-12 bg-black text-white">
-
+        {/* LEFT: Form */}
+        <div className="flex flex-col justify-center w-full lg:w-1/2 px-10 py-14 bg-black text-white">
           <div className="mb-8">
             <h2 className="text-sm font-medium text-gray-400 mb-2">Expense Manager</h2>
             <h1 className="text-3xl font-bold mb-2">Create Account</h1>
@@ -69,48 +63,25 @@ function SignUp() {
             </p>
           )}
 
-          <form className="space-y-5" onSubmit={handleSubmit}>
+          <form className="space-y-6" onSubmit={handleSubmit}>
             <div className="grid grid-cols-2 gap-4">
-              <InputField
-                label="First Name"
-                type="text"
-                value={firstName}
-                onChange={(e) => setFirstName(e.target.value)}
-                required
-              />
-              <InputField
-                label="Last Name"
-                type="text"
-                value={lastName}
-                onChange={(e) => setLastName(e.target.value)}
-                required
-              />
+              <InputField label="First Name" type="text" value={firstName} onChange={(e) => setFirstName(e.target.value)} required />
+              <InputField label="Last Name"  type="text" value={lastName}  onChange={(e) => setLastName(e.target.value)}  required />
             </div>
 
             <InputField
-              label="Email"
-              type="email"
-              placeholder="Johndoe@gmail.com"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              required
+              label="Email" type="email" placeholder="Johndoe@gmail.com"
+              value={email} onChange={(e) => setEmail(e.target.value)} required
             />
-
             <InputField
-              label="Password"
-              placeholder="••••••••"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              required
-              eyeIcon={eye}
-              showPasswordToggle
-              showPassword={isPasswordVisible}
-              onTogglePassword={togglePasswordVisibility}
+              label="Password" placeholder="••••••••"
+              value={password} onChange={(e) => setPassword(e.target.value)}
+              required eyeIcon={eye} showPasswordToggle
+              showPassword={isPasswordVisible} onTogglePassword={togglePasswordVisibility}
             />
 
             <button
-              type="submit"
-              disabled={loading}
+              type="submit" disabled={loading}
               className="w-full bg-[#4ADE80] text-black font-semibold py-3 rounded-lg
                          hover:bg-[#3BC470] transition-colors duration-200
                          disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center gap-2"
@@ -123,21 +94,17 @@ function SignUp() {
                   </svg>
                   Creating Account…
                 </>
-              ) : (
-                "Sign Up"
-              )}
+              ) : "Sign Up"}
             </button>
           </form>
 
           <p className="text-center text-gray-400 text-sm mt-8">
             Already have an account?{" "}
-            <a href="/signin" className="text-[#4ADE80] hover:underline">
-              Sign In
-            </a>
+            <a href="/signin" className="text-[#4ADE80] hover:underline">Sign In</a>
           </p>
         </div>
 
-        {/* RIGHT — hidden on small screens */}
+        {/* RIGHT: hidden below lg breakpoint */}
         <div className="hidden lg:block lg:w-1/2">
           <RightScreen />
         </div>
